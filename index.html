@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF墨韵 — 本地处理 · 文件永不离开设备</title>
+  <meta name="description" content="免费在线PDF工具箱。合并、拆分、旋转、删除页面——完全在浏览器本地处理，文件永不离开你的设备。">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=ZCOOL+XiaoWei&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+
+  <!-- pdf-lib & JSZip -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      /* Light Theme */
+      --bg:          #faf7f2;
+      --bg-card:    #ffffff;
+      --bg-card2:   #f5f1eb;
+      --bg-hover:   #f0ebe3;
+      --border:     #e4ddd4;
+      --border2:    #d4c9bc;
+      --text:       #1c1917;
+      --text-muted: #78716c;
+      --text-light: #a8a29e;
+      --accent:     #c9403a;
+      --accent2:    #4a9e8a;
+      --accent-dim: rgba(201, 64, 58, 0.08);
+      --accent2-dim:rgba(74, 158, 138, 0.08);
+      --shadow:     0 2px 12px rgba(0,0,0,0.06);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,0.10);
+      --radius:     12px;
+      --radius-sm:  8px;
+      --radius-xs:  6px;
+      --font-serif: 'ZCOOL XiaoWei', 'Georgia', serif;
+      --font-sans:  'Noto Sans SC', -apple-system, sans-serif;
+      --font-mono:  'JetBrains Mono', monospace;
+      --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    [data-theme="dark"] {
+      --bg:          #13120f;
+      --bg-card:     #1e1c18;
+      --bg-card2:    #252219;
+      --bg-hover:    #2a2720;
+      --border:      #2e2b24;
+      --border2:     #3d3a31;
+      --text:        #e8e4dc;
+      --text-muted:  #9c9588;
+      --text-light:  #5c564d;
+      --accent:      #e8b86d;
+      --accent2:     #7ab5a0;
+      --accent-dim:  rgba(232, 184, 109, 0.10);
+      --accent2-dim: rgba(122, 181, 160, 0.10);
+      --shadow:      0 2px 12px rgba(0,0,0,0.30);
+      --shadow-lg:   0 8px 32px rgba(0,0,0,0.50);
+    }
+
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background var(--transition), color var(--transition);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+    ::selection { background: var(--accent-dim); color: var(--accent); }
+
+    /* ===== LAYOUT ===== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .logo-icon {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-family: var(--font-serif);
+      font-size: 1.35rem;
+      color: var(--text);
+      letter-spacing: 0.03em;
+      transition: color var(--transition);
+    }
+
+    .logo-sub {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      color: var(--text-light);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      display: block;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    /* Nav Tabs */
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: var(--bg-card2);
+      border-radius: var(--radius);
+      padding: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .nav-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .nav-tab:hover {
+      color: var(--text);
+      background: var(--bg-hover);
+    }
+
+    .nav-tab.active {
+      background: var(--bg-card);
+      color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+
+    .nav-tab svg { flex-shrink: 0; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .privacy-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      background: var(--accent2-dim);
+      border: 1px solid var(--accent2);
+      border-radius: 99px;
+      font-size: 0.72rem;
+      color: var(--accent2);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    .theme-toggle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .theme-toggle:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      transform: scale(1.08);
+    }
+
+    /* ===== MAIN ===== */
+    .app-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ===== HERO / DROP ZONE ===== */
+    .drop-hero {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .drop-hero h1 {
+      font-family: var(--font-serif);
+      font-size: 2.4rem;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    .drop-hero p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    .drop-zone {
+      position: relative;
+      border: 2px dashed var(--border2);
+      border-radius: var(--radius-lg);
+      padding: 64px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--bg-card);
+      margin-bottom: 24px;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      transform: scale(1.005);
+    }
+
+    .drop-zone.drag-over .drop-icon { transform: scale(1.15); }
+
+    .drop-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      color: var(--accent);
+      transition: transform 0.3s ease;
+    }
+
+    .drop-zone h3 {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .drop-zone p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      padding: 9px 20px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      pointer-events: none;
+    }
+
+    /* ===== ACTION BAR ===== */
+    .action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .action-bar .file-info {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .action-bar .file-info strong { color: var(--text); }
+
+    .action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+      background: #b53730;
+      border-color: #b53730;
+      color: #fff;
+    }
+
+    .btn-danger {
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+
+    .btn-danger:hover {
+      background: #fef2f2;
+    }
+
+    [data-theme="dark"] .btn-danger {
+      color: #f87171;
+      border-color: #7f1d1d;
+    }
+
+    [data-theme="dark"] .btn-danger:hover {
+      background: #1f0a0a;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .btn-sm {
+      padding: 5px 11px;
+      font-size: 0.75rem;
+    }
+
+    /* ===== PAGE GRID ===== */
+    .page-grid-wrap {
+      margin-bottom: 24px;
+    }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .page-card {
+      position: relative;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: grab;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .page-card:hover {
+      border-color: var(--accent2);
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+    }
+
+    .page-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .page-card.dragging {
+      opacity: 0.4;
+      transform: scale(0.95);
+      cursor: grabbing;
+    }
+
+    .page-card.drag-over-card {
+      border-color: var(--accent2);
+      background: var(--accent2-dim);
+    }
+
+    .page-thumb-wrap {
+      position: relative;
+      background: var(--bg-card2);
+      aspect-ratio: 3/4;
+      overflow: hidden;
+    }
+
+    .page-thumb-wrap canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .page-num {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: var(--radius-xs);
+      z-index: 2;
+    }
+
+    .page-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s ease;
+      z-index: 3;
+      opacity: 0;
+    }
+
+    .page-card:hover .page-overlay,
+    .page-card.selected .page-overlay { opacity: 1; }
+
+    .page-overlay-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: var(--bg-card);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      transition: all 0.15s ease;
+      font-size: 0;
+    }
+
+    .page-overlay-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: scale(1.1);
+    }
+
+    .page-overlay-btn.delete:hover {
+      background: #dc2626;
+    }
+
+    .page-overlay-check {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-card);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
+      transition: all 0.15s ease;
+    }
+
+    .page-card.selected .page-overlay-check {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .page-overlay-check svg { display: none; }
+
+    .page-card.selected .page-overlay-check svg { display: block; }
+
+    .page-card-label {
+      padding: 6px 8px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .page-card-label .drag-handle {
+      color: var(--text-light);
+      cursor: grab;
+    }
+
+    /* ===== SELECTION BAR ===== */
+    .selection-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      font-size: 0.82rem;
+      color: var(--text);
+      animation: slideDown 0.2s ease;
+    }
+
+    .selection-bar.visible { display: flex; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .selection-bar span { flex: 1; }
+
+    /* ===== SPLIT CONTROLS ===== */
+    .tool-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .tool-panel-title {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .range-hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .range-hint code {
+      font-family: var(--font-mono);
+      background: var(--bg-card2);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: var(--accent2);
+    }
+
+    .range-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .range-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    /* ===== ROTATE CONTROLS ===== */
+    .rotate-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .rotate-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.75rem;
+    }
+
+    .rotate-btn:hover {
+      border-color: var(--accent2);
+      color: var(--accent2);
+      background: var(--accent2-dim);
+    }
+
+    /* ===== MERGE FILE LIST ===== */
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    .file-item .file-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-xs);
+      background: var(--accent-dim);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .file-item .file-name {
+      flex: 1;
+      font-size: 0.82rem;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-item .file-size {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-light);
+    }
+
+    .file-item .file-remove {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      color: var(--text-light);
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .file-item .file-remove:hover {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    /* ===== PROGRESS ===== */
+    .progress-wrap {
+      display: none;
+      margin-bottom: 16px;
+    }
+
+    .progress-wrap.visible { display: block; }
+
+    .progress-bar-bg {
+      height: 4px;
+      background: var(--bg-card2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      border-radius: 99px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .progress-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* ===== NOTIFICATION ===== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--accent2);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.85rem;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 999;
+      animation: toastIn 0.3s ease;
+      max-width: 340px;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== PRIVACY FOOTER ===== */
+    .privacy-footer {
+      text-align: center;
+      padding: 40px 24px 60px;
+      border-top: 1px solid var(--border);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .privacy-footer-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .privacy-footer .shield-icon {
+      width: 40px;
+      height: 40px;
+      color: var(--accent2);
+    }
+
+    .privacy-footer h3 {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      color: var(--text);
+    }
+
+    .privacy-footer p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      max-width: 480px;
+      line-height: 1.7;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      width: 100%;
+      max-width: 800px;
+      margin-top: 8px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .feature-item .check-icon { color: var(--accent2); flex-shrink: 0; }
+
+    /* ===== LOADING SKELETON ===== */
+    .page-skeleton {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .page-skeleton-thumb {
+      aspect-ratio: 3/4;
+      background: linear-gradient(90deg, var(--bg-card2) 25%, var(--bg-hover) 50%, var(--bg-card2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ===== TOOL CONTENT AREAS ===== */
+    .tool-view { display: none; }
+    .tool-view.active { display: block; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+    }
+
+    .empty-state p {
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    /* ===== DIVIDER ===== */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .header-inner { padding: 0 16px; gap: 10px; }
+      .logo-text { font-size: 1.1rem; }
+      .nav-tab span { display: none; }
+      .nav-tab { padding: 7px 10px; }
+      .privacy-badge { display: none; }
+      .app-main { padding: 24px 16px 60px; }
+      .drop-hero h1 { font-size: 1.7rem; }
+      .page-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="app-header">
+  <div class="header-inner">
+    <a href="#" class="logo" onclick="location.reload(); return false;">
+      <svg class="logo-icon" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="34" height="34" rx="8" fill="var(--accent-dim)"/>
+        <path d="M8 8h12a6 6 0 0 1 0 12H8V8z" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M8 20h10a4 4 0 0 1 0 8H8v-8z" fill="none" stroke="var(--accent2)" stroke-width="1.8" stroke-linejoin="round"/>
+        <circle cx="26" cy="10" r="2.5" fill="var(--accent)"/>
+      </svg>
+      <div>
+        <span class="logo-text">PDF墨韵</span>
+        <span class="logo-sub">PDF Studio</span>
+      </div>
+    </a>
+
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-tab active" role="tab" data-tool="merge" aria-selected="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M16 6h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3"/><path d="M12 13v8"/><path d="m9 16 3-3-3-3"/></svg>
+        <span>合并</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="split" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.5A3.5 3.5 0 0 0 8.5 10H3"/><path d="M21 15v5a2 2 0 0 1-2 2h-5"/><path d="M15 3v5"/></svg>
+        <span>拆分</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="rotate" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        <span>旋转</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="delete" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        <span>删除页</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="reorder" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l4-4 4 4"/><path d="M5 15l4 4 4-4"/><path d="M19 5v14"/></svg>
+        <span>重排</span>
+      </button>
+    </nav>
+
+    <div class="header-right">
+      <div class="privacy-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        本地处理
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换主题">
+        <svg id="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <svg id="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main class="app-main">
+
+  <!-- Drop Hero (shown when no PDF loaded) -->
+  <div id="dropHero">
+    <div class="drop-hero">
+      <h1>PDF 处理，简单而私密</h1>
+      <p>合并、拆分、旋转、删除页面——所有操作在你的浏览器本地完成，文件永不离开你的设备。</p>
+    </div>
+
+    <div class="drop-zone" id="mainDropZone">
+      <input type="file" id="mainFileInput" accept=".pdf,application/pdf" multiple />
+      <svg class="drop-icon" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="4" width="32" height="40" rx="4" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="2"/>
+        <path d="M8 20h32" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <path d="M12 28h18" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M12 33h12" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M34 18l8 8-8 8" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M42 26h-12" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <h3>将 PDF 文件拖入此处</h3>
+      <p>或点击选择文件，支持多选 · 页面缩略图实时预览</p>
+      <div class="drop-cta">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        选择 PDF 文件
+      </div>
+    </div>
+  </div>
+
+  <!-- Tool Views (shown when PDF loaded) -->
+  <div id="toolViews" style="display:none">
+
+    <!-- MERGE VIEW -->
+    <div class="tool-view active" id="view-merge">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">合并 PDF</h1>
+        <p>上传多个 PDF，按上传顺序合并为一个文件</p>
+      </div>
+
+      <!-- File list for merge -->
+      <div id="mergeFileList" class="file-list"></div>
+
+      <!-- Drop zone for more files -->
+      <div class="drop-zone" id="mergeDropZone" style="padding:32px 24px;margin-bottom:20px">
+        <input type="file" id="mergeFileInput" accept=".pdf,application/pdf" multiple />
+        <svg width="36" height="36" viewBox="0 0 56 56" fill="none" style="margin:0 auto 12px;display:block;color:var(--accent)">
+          <circle cx="28" cy="28" r="24" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="2"/>
+          <path d="M28 20v16M20 28h16" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <h3 style="font-size:1rem">添加更多文件</h3>
+        <p style="font-size:0.78rem">拖入更多 PDF 或点击选择</p>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          重新开始
+        </button>
+        <button class="btn btn-primary" id="btn-merge" onclick="doMerge()" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M16 6h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3"/><path d="M12 13v8"/><path d="m9 16 3-3-3-3"/></svg>
+          合并并下载
+        </button>
+      </div>
+    </div>
+
+    <!-- SPLIT VIEW -->
+    <div class="tool-view" id="view-split">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">拆分 PDF</h1>
+        <p>按页面范围拆分，或将每一页单独导出</p>
+      </div>
+
+      <div class="page-grid-wrap">
+        <div class="page-grid" id="splitPageGrid"></div>
+      </div>
+
+      <div class="tool-panel">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.5A3.5 3.5 0 0 0 8.5 10H3"/><path d="M21 15v5a2 2 0 0 1-2 2h-5"/></svg>
+          指定拆分范围
+        </div>
+        <p class="range-hint">
+          输入示例：<code>1-3, 5, 7-9</code> 表示提取第1至3页、第5页、第7至9页。
+          留空则将每一页拆分为单独文件。
+        </p>
+        <input type="text" class="range-input" id="splitRangeInput" placeholder="输入页面范围，如 1-3, 5, 7-9（可选）" />
+      </div>
+
+      <div class="progress-wrap" id="splitProgress">
+        <div class="progress-bar-bg"><div class="progress-bar" id="splitProgressBar"></div></div>
+        <div class="progress-text" id="splitProgressText">正在处理…</div>
+      </div>
+
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">重新开始</button>
+        <button class="btn btn-primary" onclick="doSplit()" id="btn-split" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          拆分并下载 ZIP
+        </button>
+      </div>
+    </div>
+
+    <!-- ROTATE VIEW -->
+    <div class="tool-view" id="view-rotate">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">旋转页面</h1>
+        <p>选中页面后，选择旋转角度</p>
+      </div>
+
+      <div class="page-grid-wrap">
+        <div class="page-grid" id="rotatePageGrid"></div>
+      </div>
+
+      <div class="selection-bar" id="rotateSelBar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        已选 <strong id="rotateSelCount">0</strong> 页
+        <button class="btn btn-sm" onclick="clearRotateSelection()">清除选择</button>
+      </div>
+
+      <div class="tool-panel">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          旋转角度
+        </div>
+        <div class="rotate-controls">
+          <button class="rotate-btn" onclick="doRotate(90)" id="btn-rot90">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            90°
+          </button>
+          <button class="rotate-btn" onclick="doRotate(180)" id="btn-rot180">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 3v6h6"/></svg>
+            180°
+          </button>
+          <button class="rotate-btn" onclick="doRotate(270)" id="btn-rot270">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            270°
+          </button>
+          <button class="btn btn-sm" onclick="resetAll()" style="margin-left:auto">重新开始</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE VIEW -->
+    <div class="tool-view" id="view-delete">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">删除页面</h1>
+        <p>点击页面卡片选中（红色边框），然后确认删除</p>
+      </div>
+
+      <div class="page-grid-wrap">
+        <div class="page-grid" id="deletePageGrid"></div>
+      </div>
+
+      <div class="selection-bar" id="deleteSelBar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        已选 <strong id="deleteSelCount">0</strong> 页待删除
+        <button class="btn btn-sm" onclick="clearDeleteSelection()">取消选择</button>
+      </div>
+
+      <div class="progress-wrap" id="deleteProgress">
+        <div class="progress-bar-bg"><div class="progress-bar" id="deleteProgressBar"></div></div>
+        <div class="progress-text" id="deleteProgressText">正在处理…</div>
+      </div>
+
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">重新开始</button>
+        <button class="btn btn-primary btn-danger" id="btn-delete" onclick="doDelete()" disabled style="background:#dc2626;border-color:#dc2626">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          确认删除并下载
+        </button>
+      </div>
+    </div>
+
+    <!-- REORDER VIEW -->
+    <div class="tool-view" id="view-reorder">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">重排页面顺序</h1>
+        <p>拖拽页面卡片调整顺序，满意后点击下载</p>
+      </div>
+
+      <div class="page-grid-wrap">
+        <div class="page-grid" id="reorderPageGrid"></div>
+      </div>
+
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">重新开始</button>
+        <button class="btn btn-primary" onclick="doReorder()" id="btn-reorder" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          保存顺序并下载
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /toolViews -->
+
+  <!-- Progress bar (general) -->
+  <div class="progress-wrap" id="generalProgress" style="margin-top:20px">
+    <div class="progress-bar-bg"><div class="progress-bar" id="generalProgressBar"></div></div>
+    <div class="progress-text" id="generalProgressText">正在处理…</div>
+  </div>
+
+</main>
+
+<!-- ===== PRIVACY FOOTER ===== -->
+<footer class="privacy-footer" id="privacyFooter">
+  <div class="privacy-footer-inner">
+    <svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <polyline points="9 12 11 14 15 10"/>
+    </svg>
+    <h3>你的文件只属于你</h3>
+    <p>所有 PDF 处理全程在浏览器本地完成，文件永不离开你的设备。没有服务器，没有上传，没有存储。我们无法看到你的文件。</p>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        100% 浏览器本地处理
+      </div>
+      <div class="feature-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        无需注册账号
+      </div>
+      <div class="feature-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        完全免费使用
+      </div>
+      <div class="feature-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        无限次使用
+      </div>
+      <div class="feature-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        支持超大文件
+      </div>
+      <div class="feature-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        离线可用（缓存后）
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script type="module">
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  pdfDoc: null,         // pdf-lib doc
+  pdfBytes: null,       // raw bytes
+  fileName: '',         // original file name
+  pageCount: 0,
+  pageRotations: {},    // pageIndex -> degrees (0/90/180/270)
+  selectedPages: new Set(),   // for rotate/delete
+  orderedPages: [],          // for reorder
+  mergeFiles: [],            // [{name, bytes, pageCount}]
+};
+
+// ============================================================
+// THEME
+// ============================================================
+const themeToggle = document.getElementById('themeToggle');
+const iconSun = document.getElementById('icon-sun');
+const iconMoon = document.getElementById('icon-moon');
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('pdf-studio-theme', theme);
+  iconSun.style.display = theme === 'light' ? 'block' : 'none';
+  iconMoon.style.display = theme === 'dark' ? 'block' : 'none';
+}
+
+const savedTheme = localStorage.getItem('pdf-studio-theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(savedTheme);
+
+themeToggle.addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  setTheme(next);
+});
+
+// ============================================================
+// PDF.js setup
+// ============================================================
+const pdfjsLib = window.pdfjsLib;
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+
+// ============================================================
+// FILE LOADING HELPERS
+// ============================================================
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+async function loadPdfFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  return { bytes, name: file.name };
+}
+
+async function renderPageThumbnail(pdf, pageIndex, canvas) {
+  const page = await pdf.getPage(pageIndex + 1); // pdf.js is 1-indexed
+  const viewport = page.getViewport({ scale: 0.25 });
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  // Draw background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+}
+
+// ============================================================
+// THUMBNAIL CARD CREATION
+// ============================================================
+function createPageCard(pageIndex, pageCount, tool) {
+  const card = document.createElement('div');
+  card.className = 'page-card';
+  card.dataset.page = pageIndex;
+  card.draggable = (tool === 'reorder');
+
+  const rotationDeg = state.pageRotations[pageIndex] || 0;
+  if (rotationDeg) card.dataset.rotation = rotationDeg;
+
+  card.innerHTML = `
+    <div class="page-thumb-wrap">
+      <canvas></canvas>
+      <span class="page-num">${pageIndex + 1} / ${pageCount}</span>
+      <div class="page-overlay-check">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="page-overlay">
+        <button class="page-overlay-btn delete" title="删除" data-action="delete">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="page-card-label">
+      <span class="drag-handle">☰</span>
+      <span style="font-family:var(--font-mono);font-size:0.65rem">P.${pageIndex + 1}</span>
+    </div>
+  `;
+
+  return card;
+}
+
+// ============================================================
+// LOAD PDF INTO ALL VIEWS
+// ============================================================
+async function loadPdfIntoViews(file) {
+  const { bytes, name } = await loadPdfFile(file);
+  state.pdfBytes = bytes;
+  state.fileName = name;
+
+  const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+  state.pdfDoc = pdfDoc;
+  state.pageCount = pdfDoc.getPageCount();
+  state.pageRotations = {};
+  state.selectedPages = new Set();
+  state.orderedPages = Array.from({ length: state.pageCount }, (_, i) => i);
+
+  // Show tool views, hide hero
+  document.getElementById('dropHero').style.display = 'none';
+  document.getElementById('toolViews').style.display = 'block';
+  document.getElementById('privacyFooter').style.display = 'none';
+
+  // Render thumbnails for each tool view
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+
+  const tools = ['split', 'rotate', 'delete', 'reorder'];
+  for (const tool of tools) {
+    const grid = document.getElementById(tool + 'PageGrid');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < state.pageCount; i++) {
+      const card = createPageCard(i, state.pageCount, tool);
+      // Render thumbnail
+      const canvas = card.querySelector('canvas');
+      renderPageThumbnail(pdf, i, canvas).catch(() => {});
+      grid.appendChild(card);
+    }
+  }
+
+  // Enable buttons
+  document.getElementById('btn-split').disabled = false;
+
+  // Init merge view
+  initMergeView();
+  showTool('merge');
+}
+
+// ============================================================
+// MERGE VIEW
+// ============================================================
+function initMergeView() {
+  // Add current PDF as first item
+  if (state.pdfBytes) {
+    state.mergeFiles = [{ name: state.fileName, bytes: state.pdfBytes }];
+    renderMergeFileList();
+  }
+}
+
+function renderMergeFileList() {
+  const list = document.getElementById('mergeFileList');
+  list.innerHTML = '';
+  state.mergeFiles.forEach((f, idx) => {
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.innerHTML = `
+      <div class="file-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <span class="file-name">${f.name}</span>
+      <span class="file-size">${formatBytes(f.bytes.length)}</span>
+      <button class="file-remove" data-idx="${idx}" title="移除">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    `;
+    item.querySelector('.file-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.mergeFiles.splice(idx, 1);
+      renderMergeFileList();
+      document.getElementById('btn-merge').disabled = state.mergeFiles.length < 2;
+    });
+    list.appendChild(item);
+  });
+  document.getElementById('btn-merge').disabled = state.mergeFiles.length < 2;
+}
+
+async function doMerge() {
+  if (state.mergeFiles.length < 2) return;
+  showProgress('generalProgress', 'generalProgressBar', 'generalProgressText', 0);
+  const mergedPdf = await PDFLib.PDFDocument.create();
+  const total = state.mergeFiles.length;
+
+  for (let i = 0; i < total; i++) {
+    updateProgress('generalProgressBar', 'generalProgressText',
+      ((i / total) * 100).toFixed(0) + '%', (i / total) * 100);
+    const srcDoc = await PDFLib.PDFDocument.load(state.mergeFiles[i].bytes);
+    const pages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
+    pages.forEach(p => mergedPdf.addPage(p));
+    // Allow UI to update
+    await new Promise(r => setTimeout(r, 10));
+  }
+
+  const pdfBytes = await mergedPdf.save();
+  hideProgress('generalProgress');
+  downloadBytes(pdfBytes, `merged_${Date.now()}.pdf`);
+  showToast(`✅ 合并完成！共 ${mergedPdf.getPageCount()} 页`);
+}
+
+// ============================================================
+// SPLIT
+// ============================================================
+function parseRange(input, maxPage) {
+  if (!input.trim()) return null; // null = split all
+  const pages = new Set();
+  const parts = input.split(',').map(s => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    if (part.includes('-')) {
+      const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+      if (isNaN(start) || isNaN(end) || start < 1 || end > maxPage || start > end) {
+        throw new Error(`无效范围: ${part}`);
+      }
+      for (let i = start; i <= end; i++) pages.add(i - 1);
+    } else {
+      const n = parseInt(part);
+      if (isNaN(n) || n < 1 || n > maxPage) throw new Error(`无效页码: ${part}`);
+      pages.add(n - 1);
+    }
+  }
+  return [...pages];
+}
+
+async function doSplit() {
+  const rangeInput = document.getElementById('splitRangeInput').value.trim();
+  const progressWrap = document.getElementById('splitProgress');
+  const progressBar = document.getElementById('splitProgressBar');
+  const progressText = document.getElementById('splitProgressText');
+
+  showProgress('splitProgress', 'splitProgressBar', 'splitProgressText', 0);
+
+  try {
+    let pageIndices;
+    if (rangeInput) {
+      pageIndices = parseRange(rangeInput, state.pageCount);
+    } else {
+      // All pages as separate files
+      pageIndices = Array.from({ length: state.pageCount }, (_, i) => i);
+    }
+
+    const zip = new JSZip();
+    const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes);
+    const baseName = state.fileName.replace(/\.pdf$/i, '') || 'document';
+    let done = 0;
+
+    for (const idx of pageIndices) {
+      const newPdf = await PDFLib.PDFDocument.create();
+      const [copiedPage] = await newPdf.copyPages(srcDoc, [idx]);
+      newPdf.addPage(copiedPage);
+      const bytes = await newPdf.save();
+      const fileName = `${baseName}_page${String(idx + 1).padStart(3, '0')}.pdf`;
+      zip.file(fileName, bytes);
+      done++;
+      updateProgress('splitProgressBar', 'splitProgressText',
+        `${done} / ${pageIndices.length}`, (done / pageIndices.length) * 100);
+      await new Promise(r => setTimeout(r, 5));
+    }
+
+    const zipBlob = await zip.generateAsync({
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 }
+    }, (meta) => {
+      updateProgress('splitProgressBar', 'splitProgressText',
+        `正在压缩… ${meta.percent.toFixed(0)}%`, meta.percent);
+    });
+
+    hideProgress('splitProgress');
+    downloadBlob(zipBlob, `${baseName}_split.zip`);
+    showToast(`✅ 拆分完成！共 ${pageIndices.length} 个文件`);
+  } catch (e) {
+    hideProgress('splitProgress');
+    showToast(`❌ 出错: ${e.message}`);
+  }
+}
+
+// ============================================================
+// ROTATE
+// ============================================================
+function clearRotateSelection() {
+  state.selectedPages.clear();
+  updateRotateCards();
+  updateRotateSelBar();
+}
+
+function updateRotateCards() {
+  const grid = document.getElementById('rotatePageGrid');
+  grid.querySelectorAll('.page-card').forEach(card => {
+    const idx = parseInt(card.dataset.page);
+    const isSelected = state.selectedPages.has(idx);
+    card.classList.toggle('selected', isSelected);
+
+    const rot = state.pageRotations[idx] || 0;
+    const canvas = card.querySelector('canvas');
+    if (canvas) {
+      canvas.style.transform = `rotate(${rot}deg)`;
+    }
+  });
+}
+
+function updateRotateSelBar() {
+  const bar = document.getElementById('rotateSelBar');
+  const count = document.getElementById('rotateSelCount');
+  if (state.selectedPages.size > 0) {
+    bar.classList.add('visible');
+    count.textContent = state.selectedPages.size;
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+async function doRotate(degrees) {
+  if (state.selectedPages.size === 0) {
+    showToast('⚠️ 请先选中要旋转的页面（点击卡片选中）');
+    return;
+  }
+
+  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes);
+  const newPdf = await PDFLib.PDFDocument.create();
+  const total = state.pageCount;
+  let updated = 0;
+
+  showProgress('generalProgress', 'generalProgressBar', 'generalProgressText', 0);
+
+  for (let i = 0; i < total; i++) {
+    const [copiedPage] = await newPdf.copyPages(srcDoc, [i]);
+    if (state.selectedPages.has(i)) {
+      const currentRot = state.pageRotations[i] || 0;
+      const newRot = (currentRot + degrees) % 360;
+      state.pageRotations[i] = newRot;
+      copiedPage.setRotation(PDFLib.degrees(newRot));
+    } else if (state.pageRotations[i]) {
+      copiedPage.setRotation(PDFLib.degrees(state.pageRotations[i]));
+    }
+    newPdf.addPage(copiedPage);
+    updated++;
+    if (updated % 2 === 0) {
+      updateProgress('generalProgressBar', 'generalProgressText',
+        `处理中 ${updated}/${total}`, (updated / total) * 100);
+    }
+    await new Promise(r => setTimeout(r, 2));
+  }
+
+  const pdfBytes = await newPdf.save();
+  state.pdfBytes = pdfBytes;
+  state.pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+
+  hideProgress('generalProgress');
+
+  // Re-render thumbnails
+  const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+  const grid = document.getElementById('rotatePageGrid');
+  const cards = grid.querySelectorAll('.page-card');
+  for (const card of cards) {
+    const idx = parseInt(card.dataset.page);
+    const canvas = card.querySelector('canvas');
+    const rot = state.pageRotations[idx] || 0;
+    canvas.style.transform = `rotate(${rot}deg)`;
+  }
+
+  downloadBytes(pdfBytes, `rotated_${Date.now()}.pdf`);
+  showToast(`✅ 旋转完成！`);
+  state.selectedPages.clear();
+  updateRotateSelBar();
+  updateRotateCards();
+}
+
+// ============================================================
+// DELETE
+// ============================================================
+function clearDeleteSelection() {
+  state.selectedPages.clear();
+  updateDeleteCards();
+  updateDeleteSelBar();
+}
+
+function updateDeleteCards() {
+  const grid = document.getElementById('deletePageGrid');
+  grid.querySelectorAll('.page-card').forEach(card => {
+    const idx = parseInt(card.dataset.page);
+    const isSelected = state.selectedPages.has(idx);
+    card.classList.toggle('selected', isSelected);
+  });
+}
+
+function updateDeleteSelBar() {
+  const bar = document.getElementById('deleteSelBar');
+  const count = document.getElementById('deleteSelCount');
+  const btn = document.getElementById('btn-delete');
+  if (state.selectedPages.size > 0) {
+    bar.classList.add('visible');
+    count.textContent = state.selectedPages.size;
+    btn.disabled = false;
+  } else {
+    bar.classList.remove('visible');
+    btn.disabled = true;
+  }
+}
+
+async function doDelete() {
+  if (state.selectedPages.size === 0) return;
+  if (state.selectedPages.size >= state.pageCount) {
+    showToast('❌ 不能删除所有页面');
+    return;
+  }
+
+  showProgress('deleteProgress', 'deleteProgressBar', 'deleteProgressText', 0);
+
+  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes);
+  const newPdf = await PDFLib.PDFDocument.create();
+  const total = state.pageCount;
+  let idx = 0;
+  for (let i = 0; i < total; i++) {
+    if (!state.selectedPages.has(i)) {
+      const [copiedPage] = await newPdf.copyPages(srcDoc, [i]);
+      newPdf.addPage(copiedPage);
+    }
+    idx++;
+    updateProgress('deleteProgressBar', 'deleteProgressText',
+      `${idx} / ${total}`, (idx / total) * 100);
+    await new Promise(r => setTimeout(r, 3));
+  }
+
+  const pdfBytes = await newPdf.save();
+  hideProgress('deleteProgress');
+  downloadBytes(pdfBytes, `deleted_${Date.now()}.pdf`);
+  showToast(`✅ 已删除 ${state.selectedPages.size} 页，剩余 ${newPdf.getPageCount()} 页`);
+  resetAll();
+}
+
+// ============================================================
+// REORDER
+// ============================================================
+function updateReorderSelBar() {
+  const btn = document.getElementById('btn-reorder');
+  btn.disabled = false;
+}
+
+async function doReorder() {
+  showProgress('generalProgress', 'generalProgressBar', 'generalProgressText', 0);
+
+  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes);
+  const newPdf = await PDFLib.PDFDocument.create();
+  const total = state.orderedPages.length;
+  for (let i = 0; i < total; i++) {
+    const srcIdx = state.orderedPages[i];
+    const [copiedPage] = await newPdf.copyPages(srcDoc, [srcIdx]);
+    if (state.pageRotations[srcIdx]) {
+      copiedPage.setRotation(PDFLib.degrees(state.pageRotations[srcIdx]));
+    }
+    newPdf.addPage(copiedPage);
+    updateProgress('generalProgressBar', 'generalProgressText',
+      `${i + 1} / ${total}`, ((i + 1) / total) * 100);
+    await new Promise(r => setTimeout(r, 3));
+  }
+
+  const pdfBytes = await newPdf.save();
+  hideProgress('generalProgress');
+  downloadBytes(pdfBytes, `reordered_${Date.now()}.pdf`);
+  showToast(`✅ 顺序已保存！共 ${total} 页`);
+}
+
+// ============================================================
+// DRAG & DROP REORDER
+// ============================================================
+function setupReorderDrag() {
+  const grid = document.getElementById('reorderPageGrid');
+  let draggedCard = null;
+
+  grid.addEventListener('dragstart', (e) => {
+    draggedCard = e.target.closest('.page-card');
+    if (!draggedCard) return;
+    draggedCard.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  grid.addEventListener('dragend', () => {
+    if (draggedCard) draggedCard.classList.remove('dragging');
+    grid.querySelectorAll('.page-card').forEach(c => c.classList.remove('drag-over-card'));
+    draggedCard = null;
+  });
+
+  grid.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const card = e.target.closest('.page-card');
+    if (!card || card === draggedCard) return;
+    grid.querySelectorAll('.page-card').forEach(c => c.classList.remove('drag-over-card'));
+    card.classList.add('drag-over-card');
+  });
+
+  grid.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('.page-card');
+    if (!target || !draggedCard || target === draggedCard) return;
+
+    const cards = [...grid.querySelectorAll('.page-card')];
+    const fromIdx = cards.indexOf(draggedCard);
+    const toIdx = cards.indexOf(target);
+
+    // Update orderedPages
+    const [moved] = state.orderedPages.splice(fromIdx, 1);
+    state.orderedPages.splice(toIdx, 0, moved);
+
+    // Reorder DOM
+    if (fromIdx < toIdx) {
+      target.after(draggedCard);
+    } else {
+      target.before(draggedCard);
+    }
+
+    // Update page numbers in DOM
+    cards.forEach((card, i) => {
+      const origIdx = state.orderedPages[i];
+      card.dataset.page = origIdx;
+      card.querySelector('.page-num').textContent = `${origIdx + 1} / ${state.pageCount}`;
+      card.querySelector('.page-card-label span:last-child').textContent = `P.${origIdx + 1}`;
+    });
+
+    grid.querySelectorAll('.page-card').forEach(c => c.classList.remove('drag-over-card'));
+    updateReorderSelBar();
+  });
+}
+
+// ============================================================
+// CARD CLICK HANDLERS
+// ============================================================
+function setupCardClicks() {
+  // Rotate view
+  document.getElementById('rotatePageGrid').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="delete"]');
+    if (btn) {
+      const card = btn.closest('.page-card');
+      const idx = parseInt(card.dataset.page);
+      state.selectedPages.add(idx);
+      updateRotateCards();
+      updateRotateSelBar();
+      return;
+    }
+    const card = e.target.closest('.page-card');
+    if (!card) return;
+    const idx = parseInt(card.dataset.page);
+    if (state.selectedPages.has(idx)) {
+      state.selectedPages.delete(idx);
+    } else {
+      state.selectedPages.add(idx);
+    }
+    updateRotateCards();
+    updateRotateSelBar();
+  });
+
+  // Delete view
+  document.getElementById('deletePageGrid').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="delete"]');
+    const card = e.target.closest('.page-card');
+    if (!card) return;
+    const idx = parseInt(card.dataset.page);
+    if (state.selectedPages.has(idx)) {
+      state.selectedPages.delete(idx);
+    } else {
+      state.selectedPages.add(idx);
+    }
+    updateDeleteCards();
+    updateDeleteSelBar();
+  });
+}
+
+// ============================================================
+// TOOL NAVIGATION
+// ============================================================
+function showTool(toolName) {
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tool === toolName);
+    t.setAttribute('aria-selected', t.dataset.tool === toolName);
+  });
+  document.querySelectorAll('.tool-view').forEach(v => {
+    v.classList.toggle('active', v.id === 'view-' + toolName);
+  });
+}
+
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => showTool(tab.dataset.tool));
+});
+
+// ============================================================
+// PROGRESS HELPERS
+// ============================================================
+function showProgress(wrapId, barId, textId, initial) {
+  const wrap = document.getElementById(wrapId);
+  wrap.classList.add('visible');
+  document.getElementById(barId).style.width = (initial || 0) + '%';
+}
+
+function updateProgress(barId, textId, text, percent) {
+  document.getElementById(barId).style.width = percent + '%';
+  document.getElementById(textId).textContent = text;
+}
+
+function hideProgress(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  wrap.classList.remove('visible');
+}
+
+// ============================================================
+// DOWNLOAD HELPERS
+// ============================================================
+function downloadBytes(bytes, fileName) {
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  downloadBlob(blob, fileName);
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 500);
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(message) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ============================================================
+// RESET
+// ============================================================
+function resetAll() {
+  state = {
+    pdfDoc: null, pdfBytes: null, fileName: '', pageCount: 0,
+    pageRotations: {}, selectedPages: new Set(),
+    orderedPages: [], mergeFiles: []
+  };
+  document.getElementById('dropHero').style.display = 'block';
+  document.getElementById('toolViews').style.display = 'none';
+  document.getElementById('privacyFooter').style.display = 'block';
+  document.getElementById('mainFileInput').value = '';
+  document.getElementById('mergeFileInput').value = '';
+  document.getElementById('splitRangeInput').value = '';
+  hideProgress('generalProgress');
+  hideProgress('splitProgress');
+  hideProgress('deleteProgress');
+  document.getElementById('mergeFileList').innerHTML = '';
+  document.getElementById('btn-merge').disabled = true;
+  document.getElementById('btn-split').disabled = true;
+}
+
+// ============================================================
+// FILE INPUT HANDLERS
+// ============================================================
+async function handleFiles(fileList) {
+  const files = [...fileList].filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+  if (files.length === 0) {
+    showToast('❌ 请选择 PDF 文件');
+    return;
+  }
+  await loadPdfIntoViews(files[0]);
+}
+
+// Main drop zone (hero)
+const mainDropZone = document.getElementById('mainDropZone');
+const mainFileInput = document.getElementById('mainFileInput');
+
+mainDropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  mainDropZone.classList.add('drag-over');
+});
+mainDropZone.addEventListener('dragleave', () => mainDropZone.classList.remove('drag-over'));
+mainDropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  mainDropZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+mainFileInput.addEventListener('change', () => handleFiles(mainFileInput.files));
+
+// Merge drop zone
+const mergeDropZone = document.getElementById('mergeDropZone');
+const mergeFileInput = document.getElementById('mergeFileInput');
+
+mergeDropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  mergeDropZone.classList.add('drag-over');
+});
+mergeDropZone.addEventListener('dragleave', () => mergeDropZone.classList.remove('drag-over'));
+mergeDropZone.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  mergeDropZone.classList.remove('drag-over');
+  const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+  for (const file of files) {
+    const { bytes, name } = await loadPdfFile(file);
+    state.mergeFiles.push({ name, bytes });
+  }
+  renderMergeFileList();
+});
+mergeFileInput.addEventListener('change', async () => {
+  const files = [...mergeFileInput.files].filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+  for (const file of files) {
+    const { bytes, name } = await loadPdfFile(file);
+    state.mergeFiles.push({ name, bytes });
+  }
+  renderMergeFileList();
+  mergeFileInput.value = '';
+});
+
+// Init
+setupCardClicks();
+setupReorderDrag();
+</script>
+</body>
+</html>
