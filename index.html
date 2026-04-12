@@ -1108,6 +1108,7 @@
       .workflow-step-btn { padding: 6px 10px; font-size: 0.72rem; }
     }
   </style>
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
@@ -1212,6 +1213,10 @@
       <button class="nav-tab" role="tab" data-tool="wxmini" aria-selected="false">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
         <span>小程序</span>
+      <button class="nav-tab" role="tab" data-tool="history" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>历史</span>
+      </button>
       </button>
     </nav>
 
@@ -2527,6 +2532,29 @@
           </div>
         </div>
       </div>
+    <!-- HISTORY VIEW -->
+    <div class="tool-view" id="view-history">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">处理历史</h1>
+        <p>查看最近处理的 PDF 文件记录</p>
+      </div>
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="tool-panel-title" style="margin:0">最近处理的文件</div>
+          <button class="btn btn-sm" onclick="clearHistory()" style="color:var(--text-muted)">清空全部</button>
+        </div>
+        <div id="historyList" style="max-height:400px;overflow-y:auto">
+          <div style="padding:20px;text-align:center;color:var(--text-light)">暂无记录</div>
+        </div>
+      </div>
+      <div class="tool-panel">
+        <div class="tool-panel-title">数据说明</div>
+        <div style="margin-top:10px;font-size:0.78rem;color:var(--text-muted);line-height:1.7">
+          <p>📝 历史保存在浏览器本地，不上传服务器</p>
+        </div>
+      </div>
+    </div>
+
     </div>
 
   </div><!-- /toolViews -->
@@ -5281,6 +5309,78 @@ async function executeWorkflowStep(step, pdfBytes) {
       newDoc.addPage(firstPage);
       return await newDoc.save();
     }
+
+
+// ============================================================
+// USER HISTORY
+// ============================================================
+const HISTORY_KEY = 'pdf_ink_history';
+const MAX_HISTORY = 20;
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+}
+
+function addToHistory(file) {
+  const history = getHistory();
+  const entry = { name: file.name, size: file.size, time: Date.now(), tool: state.currentTool || 'unknown' };
+  history.unshift(entry);
+  history.splice(MAX_HISTORY);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderHistoryUI();
+}
+
+function clearHistory() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistoryUI();
+  showToast('✅ 历史已清空');
+}
+
+function renderHistoryUI() {
+  const c = document.getElementById('historyList');
+  if (!c) return;
+  const h = getHistory();
+  c.innerHTML = h.length ? h.map((x, i) => '<div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--border)"><span style="flex:1;font-size:0.78rem">📄 ' + x.name + '</span><span style="color:var(--text-light);font-size:0.7rem">' + new Date(x.time).toLocaleString('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}) + '</span><button onclick="removeHistoryItem(' + i + ')" style="border:none;background:none;color:var(--text-light);cursor:pointer">✕</button></div>').join('') : '<div style="padding:20px;text-align:center;color:var(--text-light)">暂无记录</div>';
+}
+
+function removeHistoryItem(i) {
+  const h = getHistory();
+  h.splice(i, 1);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+  renderHistoryUI();
+}
+
+// ============================================================
+// SHARE
+// ============================================================
+async function sharePDF() {
+  if (!state.pdfBytes) { showToast('⚠️ 请先加载 PDF'); return; }
+  const f = new File([state.pdfBytes], state.fileName || 'document.pdf', { type: 'application/pdf' });
+  if (navigator.canShare && navigator.canShare({ files: [f] })) {
+    try { await navigator.share({ title: state.fileName || 'PDF', files: [f] }); showToast('✅ 已分享'); }
+    catch(e) { if (e.name !== 'AbortError') showToast('❌ 分享失败'); }
+  } else { showShareQR(); }
+}
+
+function showShareQR() {
+  const q = 'https://chart.googleapis.com/chart?cht=qr&chs=180x180&chl=' + encodeURIComponent(location.href.split('?')[0]);
+  const m = document.createElement('div');
+  m.style = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999';
+  m.innerHTML = '<div style="background:var(--bg);padding:24px;border-radius:16px;text-align:center"><h3 style="color:var(--text)">分享链接</h3><img src="' + q + '" style="width:180px;margin:16px 0"><button onclick="this.closest('div').remove()" style="padding:10px 24px;background:var(--accent);color:#13120f;border:none;border-radius:8px">关闭</button></div>';
+  document.body.appendChild(m);
+}
+
+function copyShareLink() {
+  navigator.clipboard.writeText(location.href.split('?')[0]).then(() => showToast('✅ 已复制')).catch(() => showToast('❌ 失败'));
+}
+
+window.addEventListener('file-ready', e => addToHistory(e.detail.file));
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(r => console.log('SW:', r.scope)).catch(e => console.log('SW:', e));
+    }
+  </script>
     default: return pdfBytes;
   }
 }

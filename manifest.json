@@ -1,0 +1,23 @@
+{
+  "name": "PDF墨韵工具",
+  "short_name": "PDF墨韵",
+  "description": "免费本地PDF工具集 - 合并/拆分/旋转/删除/OCR/水印等18+工具",
+  "start_url": "./?utm_source=pwa",
+  "display": "standalone",
+  "background_color": "#faf8f3",
+  "theme_color": "#c9403a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23c9403a' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>PDF</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "scope": "./",
+  "prefer_related_applications": false
+}
