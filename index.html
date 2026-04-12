@@ -997,6 +997,79 @@
       .drop-hero h1 { font-size: 1.7rem; }
       .page-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
     }
+    /* ===== MOBILE RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      html { font-size: 15px; }
+      body { margin: 0; }
+      .container { padding: 8px 6px; }
+      .header-inner { padding: 8px 10px; flex-wrap: wrap; gap: 8px; }
+      .header-title { font-size: 1.1rem; }
+      .nav-tabs { gap: 2px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+      .nav-tabs::-webkit-scrollbar { display: none; }
+      .nav-tab { padding: 7px 9px; font-size: 0.72rem; white-space: nowrap; flex-shrink: 0; }
+      .nav-tab svg { width: 12px; height: 12px; }
+      .drop-hero { padding: 18px 14px; margin: 10px -6px; border-radius: 12px; }
+      .drop-hero h1 { font-size: 1.2rem; }
+      .drop-hero p { font-size: 0.78rem; }
+      .tool-panel { padding: 12px 10px; }
+      .action-buttons { flex-direction: column; gap: 8px; }
+      .action-buttons .btn { width: 100%; justify-content: center; }
+      .btn { padding: 9px 14px; font-size: 0.82rem; }
+      .page-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 5px; }
+      .page-card canvas { height: 80px !important; }
+      .page-label { font-size: 0.6rem; padding: 1px 4px; }
+      .progress-wrap { padding: 8px 10px; }
+      .tool-panel [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+      .tool-panel select, .tool-panel input[type="number"] { padding: 7px 8px; font-size: 0.8rem; }
+      .rotate-btn { padding: 6px 10px; font-size: 0.72rem; }
+      .file-chip { padding: 6px 10px; font-size: 0.72rem; }
+    }
+    /* ===== DARK MODE REFINEMENTS ===== */
+    [data-theme="dark"] input[type="range"] { accent-color: var(--accent); }
+    [data-theme="dark"] .rotate-btn.active { background: var(--accent); color: #13120f; border-color: var(--accent); }
+    [data-theme="dark"] .progress-bar-bg { background: var(--border2); }
+    [data-theme="dark"] .drop-hero { background: linear-gradient(135deg, #1e1c18 0%, #13120f 100%); }
+    [data-theme="dark"] .sig-canvas-wrap { border-color: var(--border2); background: var(--bg-card2); }
+    [data-theme="dark"] input[type="color"] { border: 1px solid var(--border2); }
+    /* ===== HIGHLIGHT TOOL ===== */
+    .hl-preview {
+      display: inline-block; width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid var(--border2); cursor: pointer; transition: transform 0.15s; flex-shrink: 0;
+    }
+    .hl-preview:hover { transform: scale(1.15); }
+    .hl-preview.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+    .hl-toolbar {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+      padding: 10px 14px; background: var(--bg-card2); border-radius: 8px;
+      border: 1px solid var(--border); align-items: center;
+    }
+    .hl-toolbar label { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+    .hl-toolbar select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 0.82rem; }
+    /* ===== SIGNATURE TOOL ===== */
+    .sig-wrap {
+      position: relative; border: 2px dashed var(--border2); border-radius: 10px;
+      background: var(--bg-card2); cursor: crosshair; overflow: hidden;
+    }
+    .sig-wrap:hover { border-color: var(--accent2); }
+    .sig-wrap canvas { display: block; width: 100%; }
+    .sig-hint {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      pointer-events: none; font-size: 0.85rem; color: var(--text-light); text-align: center; line-height: 1.7;
+    }
+    .sig-type-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+    .sig-type-row input[type="text"] {
+      flex: 1; min-width: 140px; padding: 9px 14px; border: 1px solid var(--border);
+      border-radius: 8px; background: var(--bg); color: var(--text); font-size: 0.9rem;
+      font-family: 'ZCOOL XiaoWei', serif;
+    }
+    .sig-type-row select { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 0.82rem; }
+    /* ===== CROP TOOL ===== */
+    .crop-bar {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      padding: 10px 14px; background: var(--bg-card2); border-radius: 8px;
+      border: 1px solid var(--border); margin-bottom: 10px; font-size: 0.8rem; color: var(--text-muted);
+    }
+    .crop-bar input[type="number"] { padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); width: 55px; font-family: var(--font-mono); font-size: 0.78rem; }
   </style>
 </head>
 <body>
@@ -1073,6 +1146,19 @@
       <button class="nav-tab" role="tab" data-tool="toword" aria-selected="false">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span>转Word</span>
+      </button>
+
+      <button class="nav-tab" role="tab" data-tool="highlight" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
+        <span>高亮</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="sign" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L18 5.5"/><path d="M7 17h10"/><path d="M7 13h7"/></svg>
+        <span>签名</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="crop" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4"/><path d="M18 18v4"/><path d="M2 6h4"/><path d="M18 6h4"/><path d="M6 18H2"/><path d="M22 6h-4"/><path d="M6 6V2"/></svg>
+        <span>裁剪</span>
       </button>
     </nav>
 
@@ -1856,6 +1942,233 @@
       </div>
     </div>
 
+
+    <!-- HIGHLIGHT / ANNOTATE VIEW -->
+    <div class="tool-view" id="view-highlight">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">文字高亮与标注</h1>
+        <p>为 PDF 添加高亮、底线、删除线或波浪线标注，适合文档审阅批注</p>
+      </div>
+
+      <div class="hl-toolbar" id="hlToolbar" style="display:none">
+        <label>标注类型</label>
+        <select id="hlType" onchange="selectedHlType=document.getElementById('hlType').value" style="padding:6px 10px">
+          <option value="highlight">🖍️ 高亮</option>
+          <option value="underline">底线</option>
+          <option value="strikethrough">删除线</option>
+          <option value="underline_wave">波浪下划线</option>
+        </select>
+        <label>颜色</label>
+        <div style="display:flex;gap:5px;align-items:center">
+          <span class="hl-preview selected" style="background:#ffeb3b" data-color="#ffeb3b" onclick="selectHlColor(this)"></span>
+          <span class="hl-preview" style="background:#4caf50" data-color="#4caf50" onclick="selectHlColor(this)"></span>
+          <span class="hl-preview" style="background:#2196f3" data-color="#2196f3" onclick="selectHlColor(this)"></span>
+          <span class="hl-preview" style="background:#ff9800" data-color="#ff9800" onclick="selectHlColor(this)"></span>
+          <span class="hl-preview" style="background:#f44336" data-color="#f44336" onclick="selectHlColor(this)"></span>
+          <span class="hl-preview" style="background:#9c27b0" data-color="#9c27b0" onclick="selectHlColor(this)"></span>
+        </div>
+        <input type="hidden" id="hlColor" value="#ffeb3b" />
+        <button class="btn btn-sm" onclick="clearHighlights()" style="margin-left:auto">清空全部</button>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
+          选择页面 → 点击缩略图画标注区域
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px">点击下方缩略图进入该页标注模式，在图上拖动选择高亮区域</p>
+        <div id="hlPageGrid" class="page-grid" style="max-height:360px;overflow-y:auto"></div>
+      </div>
+
+      <div class="progress-wrap" id="hlProgress" style="display:none">
+        <div class="progress-bar-bg"><div class="progress-bar" id="hlProgressBar"></div></div>
+        <div class="progress-text" id="hlProgressText">…</div>
+      </div>
+
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">重新开始</button>
+        <button class="btn btn-primary" onclick="doHighlight()" id="btn-highlight" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          应用标注并下载
+        </button>
+      </div>
+    </div>
+
+    <!-- SIGNATURE VIEW -->
+    <div class="tool-view" id="view-sign">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">PDF 签名</h1>
+        <p>手绘、打字或上传签名图片，添加到 PDF 任意位置</p>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L18 5.5"/></svg>
+          签名方式
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;margin-top:10px">
+          <button class="rotate-btn active" onclick="switchSignMode('draw')" id="sigModeDraw">✏️ 手绘</button>
+          <button class="rotate-btn" onclick="switchSignMode('type')" id="sigModeType">⌨️ 打字</button>
+          <button class="rotate-btn" onclick="switchSignMode('upload')" id="sigModeUpload">📎 上传</button>
+        </div>
+
+        <div id="sigDrawPanel">
+          <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px">在下方区域手绘签名（支持鼠标和触控板）</p>
+          <div class="sig-wrap" id="sigCanvasWrap">
+            <canvas id="sigCanvas" width="640" height="150"></canvas>
+            <div class="sig-hint" id="sigHint">✏️ 按下鼠标开始绘制，松开结束</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:8px;flex-wrap:wrap">
+            <span style="font-size:0.75rem;color:var(--text-muted)">画笔
+              <input type="color" id="sigColorPicker" value="#1c1917" onchange="sigBrushColor=this.value" style="width:28px;height:24px;border:none;cursor:pointer;vertical-align:middle">
+            </span>
+            <span style="font-size:0.75rem;color:var(--text-muted)">粗细
+              <input type="range" id="sigBrushSlider" min="1" max="8" value="2" onchange="sigBrushSize=parseInt(this.value)" style="width:70px">
+            </span>
+            <button class="btn btn-sm" onclick="clearSignature()">🗑️ 清除</button>
+          </div>
+        </div>
+
+        <div id="sigTypePanel" style="display:none">
+          <div class="sig-type-row">
+            <input type="text" id="sigTypeName" placeholder="在此输入姓名" value="" oninput="renderTypeSignature()" />
+            <select id="sigTypeFont" onchange="renderTypeSignature()">
+              <option value="'ZCOOL XiaoWei', serif">楷体</option>
+              <option value="serif">衬线</option>
+              <option value="cursive">手写体</option>
+              <option value="monospace">等宽</option>
+            </select>
+          </div>
+          <div class="sig-wrap" style="cursor:default">
+            <canvas id="sigTypeCanvas" width="640" height="90"></canvas>
+          </div>
+        </div>
+
+        <div id="sigUploadPanel" style="display:none">
+          <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px">上传 PNG/JPG 签名图片（透明背景效果最佳）</p>
+          <input type="file" id="sigFileInput" accept="image/*" onchange="loadSigImage(this)" style="display:none" />
+          <button class="btn" onclick="document.getElementById('sigFileInput').click()" style="width:100%;margin-bottom:8px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            选择图片文件
+          </button>
+          <img id="sigUploadImg" style="max-width:100%;max-height:100px;border-radius:6px;display:none" />
+        </div>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+          放置位置
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:5px">添加到第几页</label>
+            <input type="number" id="sigPage" class="range-input" value="1" min="1" style="width:100%;font-family:var(--font-mono)" />
+          </div>
+          <div>
+            <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:5px">签名宽度 (px)</label>
+            <input type="number" id="sigWidth" class="range-input" value="180" min="50" max="400" style="width:100%;font-family:var(--font-mono)" />
+          </div>
+          <div>
+            <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:5px">X 位置（距左）</label>
+            <input type="number" id="sigX" class="range-input" value="72" min="0" style="width:100%;font-family:var(--font-mono)" />
+          </div>
+          <div>
+            <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:5px">Y 位置（距顶部）</label>
+            <input type="number" id="sigY" class="range-input" value="680" min="0" style="width:100%;font-family:var(--font-mono)" />
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn btn-sm" onclick="setSigPreset('center-bottom')">底部居中</button>
+          <button class="btn btn-sm" onclick="setSigPreset('right-bottom')">右下角</button>
+          <button class="btn btn-sm" onclick="setSigPreset('left-bottom')">左下角</button>
+        </div>
+      </div>
+
+      <div class="progress-wrap" id="sigProgress" style="display:none">
+        <div class="progress-bar-bg"><div class="progress-bar" id="sigProgressBar"></div></div>
+        <div class="progress-text" id="sigProgressText">…</div>
+      </div>
+
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">重新开始</button>
+        <button class="btn btn-primary" onclick="doSign()" id="btn-sign" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L18 5.5"/></svg>
+          添加签名并下载
+        </button>
+      </div>
+    </div>
+
+    <!-- CROP VIEW -->
+    <div class="tool-view" id="view-crop">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">裁剪页面</h1>
+        <p>裁剪 PDF 页面边缘，去除白边或调整边距</p>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 2v4"/><path d="M18 18v4"/><path d="M2 6h4"/><path d="M18 6h4"/></svg>
+          预设裁剪
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-sm" onclick="applyCropPreset('remove-white')">去白边</button>
+          <button class="btn btn-sm" onclick="applyCropPreset('letter')">Letter 边距</button>
+          <button class="btn btn-sm" onclick="applyCropPreset('a4')">A4 边距</button>
+          <button class="btn btn-sm" onclick="resetCrop()">重置</button>
+        </div>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+          手动调整（所有选中的页统一设置）
+        </div>
+        <div class="crop-bar" style="margin-top:10px">
+          <span>上
+            <input type="number" id="cropTop" class="range-input" value="0" min="0" max="300" style="width:55px" />
+            pt
+          </span>
+          <span>下
+            <input type="number" id="cropBottom" class="range-input" value="0" min="0" max="300" style="width:55px" />
+            pt
+          </span>
+          <span>左
+            <input type="number" id="cropLeft" class="range-input" value="0" min="0" max="300" style="width:55px" />
+            pt
+          </span>
+          <span>右
+            <input type="number" id="cropRight" class="range-input" value="0" min="0" max="300" style="width:55px" />
+            pt
+          </span>
+          <span id="cropDims" style="margin-left:auto;color:var(--accent2);font-family:var(--font-mono);font-size:0.75rem">—</span>
+        </div>
+        <div style="margin-top:10px">
+          <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:5px">应用范围（第几页到第几页）</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="color:var(--text-muted)">第</span>
+            <input type="number" id="cropPageStart" class="range-input" value="1" min="1" style="width:60px;font-family:var(--font-mono)" />
+            <span style="color:var(--text-muted)">页 至 第</span>
+            <input type="number" id="cropPageEnd" class="range-input" placeholder="" value="" min="1" style="width:60px;font-family:var(--font-mono)" />
+            <span style="color:var(--text-muted)">页</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-wrap" id="cropProgress" style="display:none">
+        <div class="progress-bar-bg"><div class="progress-bar" id="cropProgressBar"></div></div>
+        <div class="progress-text" id="cropProgressText">…</div>
+      </div>
+
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">重新开始</button>
+        <button class="btn btn-primary" onclick="doCrop()" id="btn-crop" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 2v4"/><path d="M18 18v4"/><path d="M2 6h4"/><path d="M18 6h4"/></svg>
+          应用裁剪并下载
+        </button>
+      </div>
+    </div>
+
   </div><!-- /toolViews -->
 
   <!-- Progress bar (general) -->
@@ -2058,6 +2371,9 @@ async function loadPdfIntoViews(file) {
   document.getElementById('btn-metadata').disabled = false;
   document.getElementById('btn-tomarkdown').disabled = false;
   document.getElementById('btn-toword').disabled = false;
+  document.getElementById('btn-highlight').disabled = false;
+  document.getElementById('btn-sign').disabled = false;
+  document.getElementById('btn-crop').disabled = false;
 
   // Load metadata for display
   loadMetadata(state.pdfBytes.slice());
@@ -2518,10 +2834,16 @@ window.showTool = function(toolName) {
   if (btn) btn.disabled = !state.pdfDoc;
   const wordBtn = document.getElementById('btn-toword');
   if (wordBtn) wordBtn.disabled = !state.pdfDoc;
-  // Auto-extract markdown when switching to that view
-  if (toolName === 'tomarkdown' && state.pdfDoc && !extractedMarkdown) {
-    doMarkdownExtract();
-  }
+  const hlBtn = document.getElementById('btn-highlight');
+  if (hlBtn) hlBtn.disabled = !state.pdfDoc;
+  const sigBtn = document.getElementById('btn-sign');
+  if (sigBtn) sigBtn.disabled = !state.pdfDoc;
+  const cropBtn = document.getElementById('btn-crop');
+  if (cropBtn) cropBtn.disabled = !state.pdfDoc;
+  if (toolName === 'tomarkdown' && state.pdfDoc && !extractedMarkdown) doMarkdownExtract();
+  if (toolName === 'highlight' && state.pdfDoc) renderHighlightGrid();
+  if (toolName === 'sign' && state.pdfDoc) initSigCanvas();
+  if (toolName === 'crop' && state.pdfDoc) updateCropDims();
 };
 
 // ============================================================
@@ -2611,6 +2933,14 @@ function resetAll() {
   document.getElementById('btn-metadata').disabled = true;
   document.getElementById('btn-tomarkdown').disabled = true;
   document.getElementById('btn-toword').disabled = true;
+  document.getElementById('btn-highlight').disabled = true;
+  document.getElementById('btn-sign').disabled = true;
+  document.getElementById('btn-crop').disabled = true;
+  document.getElementById('hlToolbar').style.display = 'none';
+  document.getElementById('hlPageGrid').innerHTML = '';
+  if (window.hlAnnotations) hlAnnotations.clear();
+  if (window.sigData) sigData = null;
+  clearSignature();
   document.getElementById('mdPreview').textContent = '上传 PDF 后自动提取 Markdown 内容…';
   document.getElementById('wordPreview').textContent = '点击「开始转换」提取内容并生成 Word 文档…';
   extractedWordData = null;
@@ -3868,6 +4198,366 @@ function getHeadingLevel(paraItems, avgFontSize) {
   if (maxSize > avgFontSize * 1.7) return 'heading2';
   return 'heading3';
 }
+
+// ============================================================
+// HIGHLIGHT / ANNOTATE
+// ============================================================
+let selectedHlColor = '#ffeb3b';
+let selectedHlType = 'highlight';
+let hlAnnotations = new Map(); // pageIdx -> [{x0,y0,x1,y1,color,type}]
+
+function selectHlColor(el) {
+  document.querySelectorAll('.hl-preview').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedHlColor = el.dataset.color;
+  document.getElementById('hlColor').value = selectedHlColor;
+}
+
+function clearHighlights() {
+  hlAnnotations.clear();
+  if (state.pdfDoc) renderHighlightGrid();
+  showToast('✅ 全部标注已清空');
+}
+
+async function renderHighlightGrid() {
+  const grid = document.getElementById('hlPageGrid');
+  const toolbar = document.getElementById('hlToolbar');
+  if (!grid || !state.pdfDoc) return;
+  toolbar.style.display = 'flex';
+  grid.innerHTML = '';
+  const pages = state.pdfDoc.getPages();
+  for (let idx = 0; idx < pages.length; idx++) {
+    const page = pages[idx];
+    const { width, height } = page.getSize();
+    const card = document.createElement('div');
+    card.className = 'page-card';
+    card.style.cssText = 'position:relative;cursor:pointer;border-radius:6px;overflow:hidden;border:2px solid transparent;transition:all 0.2s';
+    card.title = '点击进入第 ' + (idx+1) + ' 页标注模式';
+    const canvas = document.createElement('canvas');
+    canvas.width = 100; canvas.height = Math.round(100 * height / width);
+    const label = document.createElement('div');
+    label.className = 'page-label';
+    label.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:white;text-align:center;font-size:0.62rem;padding:2px 4px';
+    label.textContent = '第 ' + (idx+1) + ' 页';
+    const count = (hlAnnotations.get(idx) || []).length;
+    if (count > 0) {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'position:absolute;top:3px;right:3px;background:var(--accent);color:white;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center;font-size:0.58rem;font-weight:700';
+      badge.textContent = count;
+      card.appendChild(badge);
+    }
+    // Render thumbnail using pdf-lib's embedPageThumbnail helper
+    PDFLib.embedPageThumbnail(page, canvas, { scale: 100/width }).catch(() => {});
+    card.appendChild(canvas);
+    card.appendChild(label);
+    card.addEventListener('click', () => enterHlPage(idx, canvas, page, width, height));
+    grid.appendChild(card);
+  }
+}
+
+async function enterHlPage(pageIdx, thumbCanvas, pdfPage, pageW, pageH) {
+  const card = thumbCanvas.parentElement;
+  card.style.borderColor = 'var(--accent)';
+  card.style.transform = 'scale(1.06)';
+  card.onclick = null;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;cursor:crosshair;z-index:10';
+  let startX=0,startY=0,curX=0,curY=0,drawing=false;
+  const selDiv = document.createElement('div');
+  selDiv.style.cssText = 'position:absolute;border:2px dashed var(--accent);background:rgba(255,235,59,0.25);pointer-events:none;display:none;z-index:11;border-radius:2px';
+  overlay.addEventListener('mousedown', e => {
+    const r = overlay.getBoundingClientRect();
+    startX=e.clientX-r.left; startY=e.clientY-r.top; drawing=true;
+    selDiv.style.display='block';
+  });
+  overlay.addEventListener('mousemove', e => {
+    if (!drawing) return;
+    const r = overlay.getBoundingClientRect();
+    curX=e.clientX-r.left; curY=e.clientY-r.top;
+    const x=Math.min(startX,curX),y=Math.min(startY,curY);
+    selDiv.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${Math.abs(curX-startX)}px;height:${Math.abs(curY-startY)}px;border:2px dashed var(--accent);background:rgba(255,235,59,0.25);pointer-events:none;z-index:11`;
+  });
+  overlay.addEventListener('mouseup', e => {
+    if (!drawing) return;
+    drawing=false;
+    const r = overlay.getBoundingClientRect();
+    const ex=e.clientX-r.left, ey=e.clientY-r.top;
+    const x0=Math.min(startX,ex),y0=Math.min(startY,ey),w=Math.abs(ex-startX),h=Math.abs(ey-startY);
+    selDiv.style.display='none';
+    if (w<4||h<4) return;
+    // Convert to PDF point coords
+    const px0=(x0/thumbCanvas.width)*pageW, py0=pageH-(y0/thumbCanvas.height)*pageH;
+    const px1=((x0+w)/thumbCanvas.width)*pageW, py1=pageH-((y0+h)/thumbCanvas.height)*pageH;
+    if (!hlAnnotations.has(pageIdx)) hlAnnotations.set(pageIdx,[]);
+    hlAnnotations.get(pageIdx).push({x0:px0,y0:py0,x1:px1,y1:py1,color:selectedHlColor,type:selectedHlType});
+    showToast('✅ 标注已添加（第'+(pageIdx+1)+'页）');
+    renderHighlightGrid();
+  });
+  card.appendChild(overlay);
+  card.appendChild(selDiv);
+}
+
+async function doHighlight() {
+  if (!state.pdfDoc) { showToast('⚠️ 请先加载 PDF'); return; }
+  showProgress('hlProgress','hlProgressBar','hlProgressText',0);
+  try {
+    const doc = await PDFLib.PDFDocument.load(state.pdfBytes.slice());
+    const pages = doc.getPages();
+    let n=0;
+    for (const [idx,items] of hlAnnotations.entries()) {
+      if (idx>=pages.length) continue;
+      const page = pages[idx];
+      for (const a of items) {
+        const {x0,y0,x1,y1,color,type} = a;
+        const r=parseInt(color.slice(1,3),16)/255, g=parseInt(color.slice(3,5),16)/255, b=parseInt(color.slice(5,7),16)/255;
+        if (type==='highlight') page.drawRectangle({x:x0,y:y1,width:x1-x0,height:y0-y1,color:PDFLib.rgb(r,g,b),opacity:0.35,borderColor:PDFLib.rgb(r,g,b),borderWidth:0});
+        else if (type==='underline') page.drawLine({start:{x:x0,y:y1},end:{x:x1,y:y1},thickness:1.5,color:PDFLib.rgb(r,g,b)});
+        else if (type==='strikethrough') page.drawLine({start:{x:x0,y:(y0+y1)/2},end:{x:x1,y:(y0+y1)/2},thickness:1.2,color:PDFLib.rgb(r,g,b)});
+        else if (type==='underline_wave') {
+          const steps=Math.max(1,Math.floor((x1-x0)/8));
+          for (let i=0;i<steps;i++){
+            const xa=x0+(i/steps)*(x1-x0), xb=x0+((i+0.5)/steps)*(x1-x0);
+            page.drawLine({start:{x:xa,y:y1+(i%2?0:3)},end:{x:xb,y:y1+(i%2?3:0)},thickness:1.2,color:PDFLib.rgb(r,g,b)});
+          }
+        }
+        n++;
+      }
+      updateProgress('hlProgressBar','hlProgressText','处理第'+(idx+1)+'/'+pages.length+'页',((idx+1)/pages.length)*100);
+    }
+    const pdfBytes = await doc.save();
+    hideProgress('hlProgress');
+    downloadBytes(pdfBytes, 'annotated_'+Date.now()+'.pdf');
+    showToast('✅ 标注应用完成！共 '+n+' 处');
+  } catch(e) { hideProgress('hlProgress'); showToast('❌ '+e.message); }
+}
+
+// ============================================================
+// SIGNATURE
+// ============================================================
+let sigData = null; // PNG data URL or base64
+let sigMode = 'draw';
+let sigCtx = null, sigDrawing = false, sigLX=0, sigLY=0;
+let sigBrushColor = '#1c1917', sigBrushSize = 2;
+
+function switchSignMode(mode) {
+  sigMode = mode;
+  document.getElementById('sigDrawPanel').style.display = mode==='draw'?'block':'none';
+  document.getElementById('sigTypePanel').style.display = mode==='type'?'block':'none';
+  document.getElementById('sigUploadPanel').style.display = mode==='upload'?'block':'none';
+  document.querySelectorAll('[id^="sigMode"]').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('sigMode'+mode[0].toUpperCase()+mode.slice(1));
+  if (btn) btn.classList.add('active');
+  if (mode==='type') renderTypeSignature();
+  if (mode==='draw' && sigCtx===null) initSigCanvas();
+}
+
+function initSigCanvas() {
+  const canvas = document.getElementById('sigCanvas');
+  if (!canvas) return;
+  const wrap = document.getElementById('sigCanvasWrap');
+  canvas.width = (wrap?.offsetWidth || 600);
+  sigCtx = canvas.getContext('2d');
+  sigCtx.fillStyle='transparent';
+  sigCtx.fillRect(0,0,canvas.width,canvas.height);
+  const hint = document.getElementById('sigHint');
+  const showHint = () => { if (hint) hint.style.display='block'; };
+  showHint();
+  canvas.onmousedown = e => {
+    sigDrawing=true; if (hint) hint.style.display='none';
+    const r=canvas.getBoundingClientRect();
+    sigLX=e.clientX-r.left; sigLY=e.clientY-r.top;
+  };
+  canvas.onmousemove = e => {
+    if (!sigDrawing) return;
+    const r=canvas.getBoundingClientRect();
+    const x=e.clientX-r.left, y=e.clientY-r.top;
+    sigCtx.strokeStyle=sigBrushColor; sigCtx.lineWidth=sigBrushSize;
+    sigCtx.lineCap='round'; sigCtx.lineJoin='round';
+    sigCtx.beginPath(); sigCtx.moveTo(sigLX,sigLY); sigCtx.lineTo(x,y); sigCtx.stroke();
+    sigLX=x; sigLY=y;
+  };
+  canvas.onmouseup = canvas.onmouseleave = () => {
+    if (sigDrawing) { sigDrawing=false; saveSigFromCanvas(); }
+  };
+  canvas.ontouchstart = e => {
+    e.preventDefault(); if (hint) hint.style.display='none'; sigDrawing=true;
+    const r=canvas.getBoundingClientRect(), t=e.touches[0];
+    sigLX=t.clientX-r.left; sigLY=t.clientY-r.top;
+  };
+  canvas.ontouchmove = e => {
+    e.preventDefault(); if (!sigDrawing) return;
+    const r=canvas.getBoundingClientRect(), t=e.touches[0];
+    const x=t.clientX-r.left, y=t.clientY-r.top;
+    sigCtx.strokeStyle=sigBrushColor; sigCtx.lineWidth=sigBrushSize;
+    sigCtx.lineCap='round'; sigCtx.beginPath(); sigCtx.moveTo(sigLX,sigLY); sigCtx.lineTo(x,y); sigCtx.stroke();
+    sigLX=x; sigLY=y;
+  };
+  canvas.ontouchend = () => { if (sigDrawing) { sigDrawing=false; saveSigFromCanvas(); } };
+  document.getElementById('btn-sign').disabled = false;
+}
+
+function saveSigFromCanvas() {
+  const canvas = document.getElementById('sigCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height);
+  let t=canvas.height,b=0,l=canvas.width,r=0;
+  for (let y=0;y<canvas.height;y++) for (let x=0;x<canvas.width;x++){
+    const i=(y*canvas.width+x)*4;
+    if (data.data[i+3]>10){ if(x<l)l=x; if(x>r)r=x; if(y<t)t=y; if(y>b)b=y; }
+  }
+  if (b<=t){ sigData=null; return; }
+  const pad=6;
+  l=Math.max(0,l-pad); r=Math.min(canvas.width,r+pad); t=Math.max(0,t-pad); b=Math.min(canvas.height,b+pad);
+  const cropped=ctx.getImageData(l,t,r-l,b-t);
+  const tmp=document.createElement('canvas'); tmp.width=r-l; tmp.height=b-t;
+  tmp.getContext('2d').putImageData(cropped,0,0);
+  sigData = tmp.toDataURL('image/png');
+}
+
+function clearSignature() {
+  const c1=document.getElementById('sigCanvas'), c2=document.getElementById('sigTypeCanvas');
+  if (c1&&sigCtx){ sigCtx.clearRect(0,0,c1.width,c1.height); }
+  if (c2){ c2.getContext('2d').clearRect(0,0,c2.width,c2.height); }
+  sigData=null;
+  const hint=document.getElementById('sigHint'); if(hint) hint.style.display='block';
+  document.getElementById('sigUploadImg').style.display='none';
+}
+
+function renderTypeSignature() {
+  const name=document.getElementById('sigTypeName')?.value||'';
+  const font=document.getElementById('sigTypeFont')?.value||'serif';
+  const canvas=document.getElementById('sigTypeCanvas');
+  if (!canvas||!name) return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.font='italic 34px '+font;
+  ctx.fillStyle='#1c1917'; ctx.textBaseline='middle';
+  ctx.fillText(name,12,canvas.height/2);
+  sigData=canvas.toDataURL('image/png');
+}
+
+function loadSigImage(input) {
+  const file=input.files[0]; if (!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=document.getElementById('sigUploadImg');
+    img.src=e.target.result; img.style.display='block';
+    sigData=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function setSigPreset(pos) {
+  const presets={'center-bottom':{x:72,y:680,w:180},'right-bottom':{x:380,y:680,w:180},'left-bottom':{x:72,y:680,w:180}};
+  const p=presets[pos]||presets['center-bottom'];
+  document.getElementById('sigX').value=p.x; document.getElementById('sigY').value=p.y;
+  document.getElementById('sigWidth').value=p.w;
+}
+
+async function doSign() {
+  if (!state.pdfDoc){ showToast('⚠️ 请先加载 PDF'); return; }
+  if (!sigData){ showToast('⚠️ 请先制作签名'); return; }
+  showProgress('sigProgress','sigProgressBar','sigProgressText',0);
+  try {
+    const doc=await PDFLib.PDFDocument.load(state.pdfBytes.slice());
+    const pages=doc.getPages();
+    const pgIdx=Math.min(parseInt(document.getElementById('sigPage').value||'1')-1,pages.length-1);
+    const sigW=parseInt(document.getElementById('sigWidth').value)||180;
+    const sigX=parseInt(document.getElementById('sigX').value)||72;
+    const sigY=parseInt(document.getElementById('sigY').value)||680;
+    const page=pages[pgIdx]; const {height}=page.getSize();
+    const sigB64=sigData.replace(/^data:image\/\w+;base64,/,'');
+    const sigBytes=Uint8Array.from(atob(sigB64),c=>c.charCodeAt(0));
+    const imgDoc=await doc.embedPng(sigBytes);
+    const imgH=Math.round(imgDoc.height*sigW/imgDoc.width);
+    const yBottom=Math.max(0,height-sigY-imgH);
+    page.drawImage(imgDoc,{x:sigX,y:yBottom,width:sigW,height:imgH});
+    updateProgress('sigProgressBar','sigProgressText','保存中…',90);
+    const pdfBytes=await doc.save();
+    hideProgress('sigProgress');
+    downloadBytes(pdfBytes,'signed_'+Date.now()+'.pdf');
+    showToast('✅ 签名已添加到第'+(pgIdx+1)+'页');
+  } catch(e){ hideProgress('sigProgress'); showToast('❌ '+e.message); }
+}
+
+// ============================================================
+// CROP
+// ============================================================
+let cropPreset = null;
+
+function applyCropPreset(preset) {
+  cropPreset = preset;
+  const presets = {
+    'remove-white': {top:8,bottom:8,left:8,right:8},
+    'letter':       {top:72,bottom:72,left:72,right:72},
+    'a4':           {top:72,bottom:72,left:72,right:72},
+  };
+  const p = presets[preset];
+  if (p) {
+    document.getElementById('cropTop').value=p.top;
+    document.getElementById('cropBottom').value=p.bottom;
+    document.getElementById('cropLeft').value=p.left;
+    document.getElementById('cropRight').value=p.right;
+    showToast('✅ '+(preset==='remove-white'?'去白边':preset.toUpperCase())+' 预设已应用');
+  }
+}
+
+function resetCrop() {
+  cropPreset=null;
+  ['cropTop','cropBottom','cropLeft','cropRight'].forEach(id=>document.getElementById(id).value=0);
+  updateCropDims();
+}
+
+function updateCropDims() {
+  const el=document.getElementById('cropDims');
+  if (!el||!state.pdfDoc) return;
+  const p0=state.pdfDoc.getPages()[0];
+  if (!p0) return;
+  const {width,height}=p0.getSize();
+  const t=parseInt(document.getElementById('cropTop')?.value)||0;
+  const b=parseInt(document.getElementById('cropBottom')?.value)||0;
+  const l=parseInt(document.getElementById('cropLeft')?.value)||0;
+  const r=parseInt(document.getElementById('cropRight')?.value)||0;
+  const nw=Math.max(1,width-l-r), nh=Math.max(1,height-t-b);
+  el.textContent='裁剪后: '+Math.round(nw)+' × '+Math.round(nh)+' pt（原: '+Math.round(width)+' × '+Math.round(height)+'）';
+  // Update page end default
+  const endIn=document.getElementById('cropPageEnd');
+  if (endIn&&!endIn.value) endIn.value=state.pdfDoc.getPages().length;
+}
+
+async function doCrop() {
+  if (!state.pdfDoc){ showToast('⚠️ 请先加载 PDF'); return; }
+  const top=parseInt(document.getElementById('cropTop').value)||0;
+  const bottom=parseInt(document.getElementById('cropBottom').value)||0;
+  const left=parseInt(document.getElementById('cropLeft').value)||0;
+  const right=parseInt(document.getElementById('cropRight').value)||0;
+  const pStart=Math.max(1,parseInt(document.getElementById('cropPageStart').value)||1)-1;
+  const pEnd=Math.min(state.pdfDoc.getPages().length,parseInt(document.getElementById('cropPageEnd').value)||state.pdfDoc.getPages().length);
+  if (top===0&&bottom===0&&left===0&&right===0){ showToast('⚠️ 请先设置裁剪尺寸'); return; }
+  showProgress('cropProgress','cropProgressBar','cropProgressText',0);
+  try {
+    const doc=await PDFLib.PDFDocument.load(state.pdfBytes.slice());
+    const pages=doc.getPages();
+    let n=0;
+    for (let i=pStart;i<pEnd;i++){
+      const pg=pages[i]; const {width,height}=pg.getSize();
+      const nw=width-left-right, nh=height-top-bottom;
+      if (nw>0&&nh>0){
+        pg.setMediaBox(left,bottom,nw,nh);
+        // Adjust CropBox if present
+        try { pg.setCropBox(left,bottom,nw,nh); } catch(e){}
+        n++;
+      }
+      updateProgress('cropProgressBar','cropProgressText','裁剪第'+(i-pStart+1)+'/'+(pEnd-pStart)+'页',((i-pStart+1)/(pEnd-pStart))*100);
+    }
+    const pdfBytes=await doc.save();
+    hideProgress('cropProgress');
+    downloadBytes(pdfBytes,'cropped_'+Date.now()+'.pdf');
+    showToast('✅ 裁剪完成！第'+(pStart+1)+'–'+pEnd+'页（'+n+'页）已处理');
+  } catch(e){ hideProgress('cropProgress'); showToast('❌ '+e.message); }
+}
+
 </script>
 </body>
 </html>
