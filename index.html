@@ -18,6 +18,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- docx.js for Word document generation -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
 
   <style>
@@ -1070,6 +1071,42 @@
       border: 1px solid var(--border); margin-bottom: 10px; font-size: 0.8rem; color: var(--text-muted);
     }
     .crop-bar input[type="number"] { padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); width: 55px; font-family: var(--font-mono); font-size: 0.78rem; }
+
+    /* ===== WORKFLOW EDITOR ===== */
+    .workflow-step-btn {
+      padding: 7px 12px; border: 1px solid var(--border); border-radius: 20px;
+      background: var(--bg-card2); color: var(--text-muted); font-size: 0.78rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .workflow-step-btn:hover {
+      background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
+    }
+    .wf-step-card {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px;
+    }
+    .wf-step-num {
+      width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: white;
+      display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+    }
+    .wf-step-name { flex: 1; font-size: 0.82rem; color: var(--text); }
+    .wf-step-del {
+      padding: 4px 8px; border: none; background: transparent; color: var(--text-light); cursor: pointer; border-radius: 4px; font-size: 0.78rem;
+    }
+    .wf-step-del:hover { background: #fee2e2; color: #dc2626; }
+    .wf-step-running { color: var(--accent2); font-size: 0.78rem; }
+    .wf-step-done { color: var(--accent); font-size: 0.78rem; }
+    .cmp-badge { padding: 2px 8px; border-radius: 12px; font-size: 0.68rem; font-weight: 700; display: inline-block; margin-top: 4px; }
+    .cmp-added { background: #dcfce7; color: #16a34a; }
+    .cmp-removed { background: #dbeafe; color: #2563eb; }
+    .cmp-modified { background: #fef3c7; color: #d97706; }
+    .cmp-same { background: var(--bg-card2); color: var(--text-light); }
+    @keyframes wf-spin { to { transform: rotate(360deg); } }
+    .wf-running { animation: wf-spin 1s linear infinite; display: inline-block; }
+    @media (max-width: 640px) {
+      .wf-step-card { padding: 8px 10px; }
+      .workflow-step-btn { padding: 6px 10px; font-size: 0.72rem; }
+    }
   </style>
 </head>
 <body>
@@ -1159,6 +1196,22 @@
       <button class="nav-tab" role="tab" data-tool="crop" aria-selected="false">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4"/><path d="M18 18v4"/><path d="M2 6h4"/><path d="M18 6h4"/><path d="M6 18H2"/><path d="M22 6h-4"/><path d="M6 6V2"/></svg>
         <span>裁剪</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="ocr" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+        <span>OCR</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="compare" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="8" height="18" rx="1"/><rect x="14" y="3" width="8" height="18" rx="1"/><path d="M10 12h4"/></svg>
+        <span>对比</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="workflow" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        <span>工作流</span>
+      </button>
+      <button class="nav-tab" role="tab" data-tool="wxmini" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        <span>小程序</span>
       </button>
     </nav>
 
@@ -2169,6 +2222,313 @@
       </div>
     </div>
 
+
+    <!-- OCR VIEW -->
+    <div class="tool-view" id="view-ocr">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">PDF 文字识别（OCR）</h1>
+        <p>从扫描件、图片型 PDF 中提取文字，支持中英日韩等 100+ 语言</p>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+          OCR 设置
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;margin-bottom:10px">
+          <div>
+            <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:5px">识别语言</label>
+            <select id="ocrLang" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:0.82rem">
+              <option value="chi_sim+eng">简体中文 + English</option>
+              <option value="chi_tra+eng">繁體中文 + English</option>
+              <option value="eng">English</option>
+              <option value="jpn">日本語</option>
+              <option value="kor">한국어</option>
+              <option value="fra">Français</option>
+              <option value="deu">Deutsch</option>
+              <option value="spa">Español</option>
+              <option value="ara">العربية</option>
+              <option value="osd">自动检测语言</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:5px">精度模式</label>
+            <select id="ocrMode" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:0.82rem">
+              <option value="accurate">精准模式（慢但准）</option>
+              <option value="fast">快速模式</option>
+            </select>
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;color:var(--text)">
+          <input type="checkbox" id="ocrPageWise" checked style="width:16px;height:16px;accent-color:var(--accent)" />
+          按页分组输出（保留分页结构）
+        </label>
+        <div style="margin-top:10px;padding:10px 14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;font-size:0.78rem;color:var(--text-muted)">
+          <strong style="color:var(--accent2)">💡 说明：</strong>OCR 依赖 Tesseract.js 引擎（本地运行），识别速度取决于 CPU/内存。扫描件建议用精准模式，普通 PDF 建议用快速模式。
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:0.82rem;color:var(--text-muted);font-weight:600">识别结果</span>
+          <span id="ocrStatus" style="font-size:0.75rem;color:var(--accent2)">—</span>
+        </div>
+        <div class="progress-bar-bg" style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:8px">
+          <div class="progress-bar" id="ocrProgressBar" style="width:0%;height:100%;background:var(--accent);border-radius:4px;transition:width 0.3s"></div>
+        </div>
+        <div id="ocrPreview" style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;min-height:180px;max-height:360px;overflow-y:auto;font-family:var(--font-mono);font-size:0.78rem;color:var(--text-muted);line-height:1.7;white-space:pre-wrap;word-break:break-all">
+          上传 PDF 后点击「开始识别」提取文字…
+        </div>
+      </div>
+
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">重新开始</button>
+        <button class="btn btn-primary" onclick="doOCR()" id="btn-ocr" disabled>
+          开始识别（OCR）
+        </button>
+        <button class="btn" onclick="downloadOCRText()" id="btn-ocr-dl" disabled style="border:1px solid var(--border2);color:var(--text)">
+          📄 下载文字
+        </button>
+      </div>
+    </div>
+
+    <!-- PDF COMPARE VIEW -->
+    <div class="tool-view" id="view-compare">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">PDF 对比</h1>
+        <p>比较两个 PDF 文档的差异，标注新增、删除和修改的内容</p>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2" y="3" width="8" height="18" rx="1"/><rect x="14" y="3" width="8" height="18" rx="1"/><path d="M10 12h4"/></svg>
+          选择两个文件进行对比
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px">
+          <div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600">📄 原文件（旧版）</div>
+            <div class="drop-zone" id="cmpOldZone" onclick="document.getElementById('cmpOldInput').click()" style="padding:18px;border-radius:10px;border:2px dashed var(--border2);text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg-card2)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">点击上传原文件 PDF</div>
+              <div style="margin-top:4px;font-size:0.72rem;color:var(--text-light)" id="cmpOldName">未选择</div>
+            </div>
+            <input type="file" id="cmpOldInput" accept=".pdf" style="display:none" onchange="handleCompareOldFile(this.files[0])" />
+          </div>
+          <div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600">📄 新文件（最新版）</div>
+            <div class="drop-zone" id="cmpNewZone" onclick="document.getElementById('cmpNewInput').click()" style="padding:18px;border-radius:10px;border:2px dashed var(--border2);text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg-card2)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">点击上传新版 PDF</div>
+              <div style="margin-top:4px;font-size:0.72rem;color:var(--text-light)" id="cmpNewName">未选择</div>
+            </div>
+            <input type="file" id="cmpNewInput" accept=".pdf" style="display:none" onchange="handleCompareNewFile(this.files[0])" />
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.78rem;color:var(--text-muted)">
+            <input type="checkbox" id="cmpPageWise" checked style="width:15px;height:15px;accent-color:var(--accent)" />
+            按页对比
+          </label>
+          <button class="btn btn-sm" onclick="startPDFCompare()" id="btn-compare" disabled style="margin-left:auto">
+            🔍 开始对比
+          </button>
+        </div>
+      </div>
+
+      <!-- Comparison summary -->
+      <div class="tool-panel" style="margin-bottom:12px" id="cmpSummaryPanel" style="display:none">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          对比结果摘要
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px">
+          <div style="background:var(--accent-dim);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.8rem;font-weight:700;color:var(--accent)" id="cmpAdded">—</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">新增页</div>
+          </div>
+          <div style="background:var(--accent2-dim);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.8rem;font-weight:700;color:var(--accent2)" id="cmpRemoved">—</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">删除页</div>
+          </div>
+          <div style="background:var(--bg-card2);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.8rem;font-weight:700;color:var(--text)" id="cmpModified">—</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">修改页</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;padding:10px 14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;font-size:0.78rem;color:var(--text-muted)">
+          <strong style="color:var(--accent)">🟢 绿色</strong> = 新版新增 &nbsp; <strong style="color:var(--accent2)">🔵 蓝色</strong> = 新版删除 &nbsp; <strong style="color:#f59e0b">🟡 橙色</strong> = 页面内容修改
+        </div>
+      </div>
+
+      <!-- Page diff grid -->
+      <div id="cmpResults" style="max-height:400px;overflow-y:auto;display:none">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;padding:4px" id="cmpPageGrid"></div>
+      </div>
+
+      <!-- Diff text panel -->
+      <div class="tool-panel" style="margin-bottom:12px;display:none" id="cmpTextPanel">
+        <div class="tool-panel-title">文字差异对比（按页）</div>
+        <div id="cmpTextResults" style="margin-top:10px;max-height:320px;overflow-y:auto;font-family:var(--font-mono);font-size:0.78rem;color:var(--text);white-space:pre-wrap;line-height:1.7"></div>
+        <div class="action-buttons" style="margin-top:10px;justify-content:flex-end">
+          <button class="btn" onclick="downloadCompareReport()" style="border:1px solid var(--border2)">📄 导出对比报告</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKFLOW EDITOR VIEW -->
+    <div class="tool-view" id="view-workflow">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">工作流自动化</h1>
+        <p>组合多个 PDF 操作，按顺序自动执行，适合批量处理复杂任务</p>
+      </div>
+
+      <!-- Step palette -->
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          添加操作步骤（点击添加）
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="workflow-step-btn" onclick="addWorkflowStep('merge')">📎 合并 PDF</button>
+          <button class="workflow-step-btn" onclick="addWorkflowStep('split')">✂️ 拆分 PDF</button>
+          <button class="workflow-step-btn" onclick="addWorkflowStep('compress')">🗜️ 压缩 PDF</button>
+          <button class="workflow-step-btn" onclick="addWorkflowStep('watermark')">💧 添加水印</button>
+          <button class="workflow-step-btn" onclick="addWorkflowStep('pagenum')">🔢 添加页码</button>
+          <button class="workflow-step-btn" onclick="addWorkflowStep('encrypt')">🔐 加密 PDF</button>
+          <button class="workflow-step-btn" onclick="addWorkflowStep('rotate')">🔄 旋转页面</button>
+          <button class="workflow-step-btn" onclick="addWorkflowStep('crop')">✂️ 裁剪页面</button>
+        </div>
+      </div>
+
+      <!-- Workflow canvas -->
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          工作流步骤（拖动排序）
+        </div>
+        <div id="workflowSteps" style="min-height:120px;margin-top:10px;padding:10px;border:2px dashed var(--border);border-radius:10px;background:var(--bg-card2)">
+          <div id="workflowEmptyHint" style="text-align:center;padding:30px;color:var(--text-light);font-size:0.85rem">
+            从上方点击操作按钮添加步骤<br>
+            <span style="font-size:0.75rem">步骤将按从上到下顺序执行</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="clearWorkflow()" style="color:var(--text-muted)">🗑️ 清空全部</button>
+          <button class="btn btn-sm" onclick="saveWorkflow()" style="border:1px solid var(--border2);color:var(--text)">💾 保存工作流</button>
+          <button class="btn btn-sm" onclick="loadWorkflow()" style="border:1px solid var(--border2);color:var(--text)">📂 加载工作流</button>
+          <input type="file" id="workflowFileInput" accept=".json" style="display:none" onchange="loadWorkflowFromFile(this.files[0])" />
+        </div>
+      </div>
+
+      <!-- Input files -->
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          上传输入文件
+        </div>
+        <div class="drop-zone" id="wfDropZone" style="margin-top:10px;padding:28px;border-radius:10px;border:2px dashed var(--border2);text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg-card2)" onclick="document.getElementById('wfFileInput').click()">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          <div style="margin-top:10px;font-size:0.85rem;color:var(--text-muted)">拖放 PDF 文件到这里，或点击上传</div>
+          <div style="margin-top:4px;font-size:0.72rem;color:var(--text-light)" id="wfFileCount">支持多个文件（用于合并等操作）</div>
+        </div>
+        <input type="file" id="wfFileInput" accept=".pdf" multiple style="display:none" onchange="handleWorkflowFiles(this.files)" />
+        <div id="wfFileList" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+
+      <!-- Run workflow -->
+      <div class="progress-wrap" id="wfProgress" style="display:none;margin-bottom:12px">
+        <div class="progress-bar-bg"><div class="progress-bar" id="wfProgressBar"></div></div>
+        <div class="progress-text" id="wfProgressText">准备中…</div>
+      </div>
+
+      <div class="action-buttons" style="justify-content:center">
+        <button class="btn" onclick="resetAll()">重新开始</button>
+        <button class="btn btn-primary" onclick="runWorkflow()" id="btn-runworkflow" disabled>
+          🚀 执行工作流
+        </button>
+      </div>
+    </div>
+
+    <!-- WECHAT MINI PROGRAM INFO VIEW -->
+    <div class="tool-view" id="view-wxmini">
+      <div class="drop-hero" style="margin-bottom:20px">
+        <h1 style="font-size:1.6rem">微信小程序版</h1>
+        <p>将 PDF 工具嵌入微信小程序，让用户在手机端直接使用</p>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+          小程序集成方案
+        </div>
+        <div style="margin-top:12px;padding:14px;background:linear-gradient(135deg,rgba(7,193,96,0.08),rgba(0,163,83,0.08));border:1px solid #07c160;border-radius:10px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div style="width:44px;height:44px;background:#07c160;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px">🌿</div>
+            <div>
+              <div style="font-size:0.9rem;font-weight:600;color:var(--text)">PDF墨韵工具 · 微信小程序</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">WebView 嵌入 · 同等体验</div>
+            </div>
+          </div>
+          <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.7">
+            在微信小程序中嵌入 WebView，加载本工具的网页版，用户无需下载即可在手机端使用全部 18 个 PDF 工具。
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">集成步骤</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">1</span>
+            <div style="font-size:0.82rem;color:var(--text);line-height:1.6">在微信公众平台注册小程序账号，获取 <code style="background:var(--bg-card2);padding:1px 5px;border-radius:4px;font-size:0.78rem">AppID</code></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">2</span>
+            <div style="font-size:0.82rem;color:var(--text);line-height:1.6">将工具部署到你自己的域名（GitHub Pages / Vercel），在小程序后台添加业务域名</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">3</span>
+            <div style="font-size:0.82rem;color:var(--text);line-height:1.6">在 <code style="background:var(--bg-card2);padding:1px 5px;border-radius:4px;font-size:0.78rem">app.json</code> 添加 WebView 页面：<br>
+              <code style="background:var(--bg-card2);padding:4px 8px;border-radius:4px;font-size:0.75rem;display:block;margin-top:4px;word-break:break-all">{"pages/pdf-tool/index", "web-view": "https://你的域名/pdf-studio/"}</code>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">4</span>
+            <div style="font-size:0.82rem;color:var(--text);line-height:1.6">添加小程序顶部导航标题，审核上线</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-panel" style="margin-bottom:12px">
+        <div class="tool-panel-title">域名配置说明</div>
+        <div style="margin-top:10px;font-size:0.82rem;color:var(--text-muted);line-height:1.7">
+          <p style="margin-bottom:8px">微信小程序要求业务域名：</p>
+          <ul style="padding-left:18px;line-height:2">
+            <li>必须使用 <strong style="color:var(--text)">HTTPS</strong>（已满足）</li>
+            <li>域名需在微信公众平台后台添加并验证</li>
+            <li>建议使用自有域名（需备案），或使用 <strong style="color:var(--text)">netlify.app</strong> / <strong style="color:var(--text)">vercel.app</strong> 等白名单域名</li>
+            <li>GitHub Pages 域名 <code style="background:var(--bg-card2);padding:1px 5px;border-radius:4px;font-size:0.78rem">*.github.io</code> 已在微信白名单中</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tool-panel">
+        <div class="tool-panel-title">推荐域名方案</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+          <div style="padding:12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text)">GitHub Pages（免费）</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">使用现有 `unej4622-cpu.github.io/pdf-studio/`，已在微信白名单</div>
+            <div style="font-size:0.7rem;color:var(--accent2);margin-top:4px">✅ 推荐，立即可用</div>
+          </div>
+          <div style="padding:12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text)">Vercel（免费）</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">绑定自有域名，支持 HTTPS，需添加域名白名单</div>
+            <div style="font-size:0.7rem;color:var(--accent2);margin-top:4px">适合有备案域名</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /toolViews -->
 
   <!-- Progress bar (general) -->
@@ -2374,6 +2734,7 @@ async function loadPdfIntoViews(file) {
   document.getElementById('btn-highlight').disabled = false;
   document.getElementById('btn-sign').disabled = false;
   document.getElementById('btn-crop').disabled = false;
+  document.getElementById('btn-ocr').disabled = false;
 
   // Load metadata for display
   loadMetadata(state.pdfBytes.slice());
@@ -2840,6 +3201,12 @@ window.showTool = function(toolName) {
   if (sigBtn) sigBtn.disabled = !state.pdfDoc;
   const cropBtn = document.getElementById('btn-crop');
   if (cropBtn) cropBtn.disabled = !state.pdfDoc;
+  const ocrBtn = document.getElementById('btn-ocr');
+  if (ocrBtn) ocrBtn.disabled = !state.pdfDoc;
+  const cmpBtn = document.getElementById('btn-compare');
+  if (cmpBtn) cmpBtn.disabled = !state.pdfDoc;
+  const wfBtn = document.getElementById('btn-runworkflow');
+  if (wfBtn) wfBtn.disabled = !(wfState.files && wfState.files.length > 0);
   if (toolName === 'tomarkdown' && state.pdfDoc && !extractedMarkdown) doMarkdownExtract();
   if (toolName === 'highlight' && state.pdfDoc) renderHighlightGrid();
   if (toolName === 'sign' && state.pdfDoc) initSigCanvas();
@@ -2936,6 +3303,15 @@ function resetAll() {
   document.getElementById('btn-highlight').disabled = true;
   document.getElementById('btn-sign').disabled = true;
   document.getElementById('btn-crop').disabled = true;
+  document.getElementById('btn-ocr').disabled = true;
+  document.getElementById('btn-compare').disabled = true;
+  document.getElementById('btn-runworkflow').disabled = true;
+  if (document.getElementById('ocrPreview')) document.getElementById('ocrPreview').textContent = '上传 PDF 后点击「开始识别」提取文字…';
+  if (document.getElementById('cmpOldName')) document.getElementById('cmpOldName').textContent = '未选择';
+  if (document.getElementById('cmpNewName')) document.getElementById('cmpNewName').textContent = '未选择';
+  if (document.getElementById('cmpSummaryPanel')) document.getElementById('cmpSummaryPanel').style.display = 'none';
+  wfState = { files: [], steps: [], results: null };
+  clearWorkflow();
   document.getElementById('hlToolbar').style.display = 'none';
   document.getElementById('hlPageGrid').innerHTML = '';
   if (window.hlAnnotations) hlAnnotations.clear();
@@ -4558,6 +4934,356 @@ async function doCrop() {
   } catch(e){ hideProgress('cropProgress'); showToast('❌ '+e.message); }
 }
 
+// ============================================================
+// OCR
+// ============================================================
+let ocrResultText = '';
+let ocrResultByPage = [];
+
+async function doOCR() {
+  if (!state.pdfDoc) { showToast('⚠️ 请先加载 PDF'); return; }
+  const preview = document.getElementById('ocrPreview');
+  const status = document.getElementById('ocrStatus');
+  const bar = document.getElementById('ocrProgressBar');
+  const lang = (document.getElementById('ocrMode')?.value === 'fast' ? 'eng' : (document.getElementById('ocrLang')?.value || 'chi_sim+eng'));
+  const pageWise = document.getElementById('ocrPageWise')?.checked ?? true;
+  preview.textContent = '正在初始化 OCR 引擎…';
+  bar.style.width = '5%';
+  status.textContent = '初始化中…';
+  try {
+    const doc = await PDFLib.PDFDocument.load(state.pdfBytes.slice());
+    const pages = doc.getPages();
+    ocrResultText = '';
+    ocrResultByPage = [];
+    const total = pages.length;
+    if (!window.Tesseract) {
+      preview.textContent = '加载 OCR 引擎中（首次约需 2MB）…';
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        s.onload = res; s.onerror = () => rej(new Error('OCR 引擎加载失败'));
+        document.head.appendChild(s);
+      });
+    }
+    status.textContent = '开始识别…';
+    const worker = await Tesseract.createWorker(lang, 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          bar.style.width = Math.round(m.progress * 100) + '%';
+          status.textContent = '识别中 ' + Math.round(m.progress * 100) + '%';
+        }
+      }
+    });
+    let allText = '';
+    for (let i = 0; i < total; i++) {
+      status.textContent = '正在识别第 ' + (i+1) + ' / ' + total + ' 页…';
+      const imgData = await renderPDFPageToImage(state.pdfBytes.slice(), i, 612, 792);
+      const { data: { text } } = await worker.recognize(imgData);
+      const cleanText = text.trim();
+      if (pageWise) {
+        allText += '\n========== 第 ' + (i+1) + ' 页 ==========\n' + cleanText + '\n';
+      } else {
+        allText += cleanText + '\n';
+      }
+      bar.style.width = Math.round(((i+1)/total)*100) + '%';
+      if (preview) preview.textContent = allText.slice(-2000);
+    }
+    await worker.terminate();
+    ocrResultText = allText;
+    bar.style.width = '100%';
+    status.textContent = '✅ 识别完成';
+    if (preview) preview.textContent = ocrResultText.slice(0, 5000) + (ocrResultText.length > 5000 ? '\n…（已截断）' : '');
+    document.getElementById('btn-ocr-dl').disabled = false;
+    showToast('✅ OCR 识别完成！共 ' + total + ' 页，约 ' + ocrResultText.length + ' 字');
+  } catch(e) {
+    if (status) status.textContent = '❌ 识别失败';
+    if (preview) preview.textContent = '识别失败: ' + e.message;
+    showToast('❌ OCR 出错: ' + e.message);
+  }
+}
+
+async function renderPDFPageToImage(pdfBytes, pageIndex, width, height) {
+  const scale = 2;
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
+    const page = await pdf.getPage(pageIndex + 1);
+    const canvas = document.createElement('canvas');
+    const viewport = page.getViewport({ scale });
+    canvas.width = viewport.width; canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return canvas.toDataURL('image/png');
+  } catch(e) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 612; canvas.height = 792;
+    return canvas.toDataURL('image/png');
+  }
+}
+
+function downloadOCRText() {
+  if (!ocrResultText) { showToast('⚠️ 请先进行 OCR 识别'); return; }
+  const blob = new Blob([ocrResultText], { type: 'text/plain;charset=utf-8' });
+  const name = (state.fileName?.replace(/\.pdf$/i, '') || 'document') + '_ocr.txt';
+  downloadBlob(blob, name);
+  showToast('✅ 文字已下载：' + name);
+}
+
+// ============================================================
+// PDF COMPARE
+// ============================================================
+let cmpOldBytes = null, cmpNewBytes = null;
+let cmpResults = null;
+
+function handleCompareOldFile(file) {
+  if (!file) return;
+  cmpOldBytes = null;
+  document.getElementById('cmpOldName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => { cmpOldBytes = new Uint8Array(e.target.result); updateCompareBtn(); };
+  reader.readAsArrayBuffer(file);
+}
+
+function handleCompareNewFile(file) {
+  if (!file) return;
+  cmpNewBytes = null;
+  document.getElementById('cmpNewName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => { cmpNewBytes = new Uint8Array(e.target.result); updateCompareBtn(); };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateCompareBtn() {
+  const btn = document.getElementById('btn-compare');
+  if (btn) btn.disabled = !(cmpOldBytes && cmpNewBytes);
+}
+
+async function startPDFCompare() {
+  if (!cmpOldBytes || !cmpNewBytes) { showToast('⚠️ 请先上传两个文件'); return; }
+  try {
+    const oldDoc = await PDFLib.PDFDocument.load(cmpOldBytes);
+    const newDoc = await PDFLib.PDFDocument.load(cmpNewBytes);
+    const oldPages = oldDoc.getPages(), newPages = newDoc.getPages();
+    cmpResults = { added: 0, removed: 0, modified: 0, pages: [] };
+    const maxPages = Math.max(oldPages.length, newPages.length);
+    for (let i = 0; i < maxPages; i++) {
+      const hasOld = i < oldPages.length, hasNew = i < newPages.length;
+      if (hasNew && !hasOld) {
+        cmpResults.added++; cmpResults.pages.push({ idx: i+1, status: 'added', detail: '新增页面' });
+      } else if (hasOld && !hasNew) {
+        cmpResults.removed++; cmpResults.pages.push({ idx: i+1, status: 'removed', detail: '已删除页面' });
+      } else {
+        const op = oldPages[i], np = newPages[i];
+        const os = op.getSize(), ns = np.getSize();
+        const same = Math.abs(os.width - ns.width) < 1 && Math.abs(os.height - ns.height) < 1;
+        if (!same) {
+          cmpResults.modified++;
+          cmpResults.pages.push({ idx: i+1, status: 'modified', detail: '尺寸变化: ' + Math.round(os.width) + '×' + Math.round(os.height) + ' → ' + Math.round(ns.width) + '×' + Math.round(ns.height) });
+        } else {
+          cmpResults.pages.push({ idx: i+1, status: 'same', detail: '内容相同（尺寸一致）' });
+        }
+      }
+    }
+    renderCompareResults();
+    showToast('✅ 对比完成！');
+  } catch(e) { showToast('❌ 对比出错: ' + e.message); }
+}
+
+function renderCompareResults() {
+  if (!cmpResults) return;
+  document.getElementById('cmpAdded').textContent = cmpResults.added;
+  document.getElementById('cmpRemoved').textContent = cmpResults.removed;
+  document.getElementById('cmpModified').textContent = cmpResults.modified;
+  const summaryPanel = document.getElementById('cmpSummaryPanel');
+  if (summaryPanel) summaryPanel.style.display = 'block';
+  const resultsDiv = document.getElementById('cmpResults');
+  if (resultsDiv) { resultsDiv.style.display = 'block'; resultsDiv.style.maxHeight = '400px'; resultsDiv.style.overflowY = 'auto'; }
+  const grid = document.getElementById('cmpPageGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const icons = { added: '🟢', removed: '🔵', modified: '🟡', same: '⚪' };
+  const labels = { added: '新增', removed: '删除', modified: '修改', same: '相同' };
+  const badgeClass = { added: 'cmp-added', removed: 'cmp-removed', modified: 'cmp-modified', same: 'cmp-same' };
+  for (const p of cmpResults.pages) {
+    const card = document.createElement('div');
+    card.style.cssText = 'padding:10px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);text-align:center;cursor:default';
+    card.innerHTML = '<div style="font-size:0.85rem;font-weight:600;color:var(--text)">第 ' + p.idx + ' 页</div><span class="cmp-badge ' + (badgeClass[p.status] || '') + '" style="padding:2px 8px;border-radius:12px;font-size:0.68rem;font-weight:700">' + (icons[p.status] || '') + ' ' + (labels[p.status] || '') + '</span>';
+    card.title = p.detail;
+    grid.appendChild(card);
+  }
+  const textDiv = document.getElementById('cmpTextResults');
+  if (textDiv) {
+    textDiv.style.maxHeight = '320px'; textDiv.style.overflowY = 'auto';
+    textDiv.style.fontFamily = 'var(--font-mono)'; textDiv.style.fontSize = '0.78rem';
+    textDiv.style.whiteSpace = 'pre-wrap'; textDiv.style.lineHeight = '1.7';
+    textDiv.style.color = 'var(--text)';
+    textDiv.textContent = cmpResults.pages.map(p => (icons[p.status] || '') + ' 第 ' + p.idx + ' 页: [' + (labels[p.status] || '') + '] ' + p.detail).join('\n');
+  }
+  const textPanel = document.getElementById('cmpTextPanel');
+  if (textPanel) textPanel.style.display = 'block';
+}
+
+function downloadCompareReport() {
+  if (!cmpResults) { showToast('⚠️ 请先进行对比'); return; }
+  const lines = ['PDF 对比报告', '对比时间: ' + new Date().toLocaleString('zh-CN'), '', '📊 统计', '  新增页: ' + cmpResults.added, '  删除页: ' + cmpResults.removed, '  修改页: ' + cmpResults.modified, '', '📄 逐页详情'].concat(cmpResults.pages.map(p => {
+    const icons = { added: '🟢', removed: '🔵', modified: '🟡', same: '⚪' };
+    const labels = { added: '新增', removed: '删除', modified: '修改', same: '相同' };
+    return (icons[p.status] || '') + ' 第 ' + p.idx + ' 页: [' + (labels[p.status] || '') + '] ' + p.detail;
+  }));
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  downloadBlob(blob, 'compare_report_' + Date.now() + '.txt');
+  showToast('✅ 对比报告已下载');
+}
+
+// ============================================================
+// WORKFLOW EDITOR
+// ============================================================
+let wfState = { files: [], steps: [], results: null };
+
+const STEP_DEFS = {
+  merge:    { label: '📎 合并 PDF' },
+  split:    { label: '✂️ 拆分 PDF' },
+  compress: { label: '🗜️ 压缩 PDF' },
+  watermark:{ label: '💧 添加水印' },
+  pagenum:  { label: '🔢 添加页码' },
+  encrypt:  { label: '🔐 加密 PDF' },
+  rotate:   { label: '🔄 旋转页面' },
+  crop:     { label: '✂️ 裁剪页面' },
+};
+
+function addWorkflowStep(type) {
+  if (!STEP_DEFS[type]) return;
+  wfState.steps.push({ id: Date.now(), type, params: {} });
+  renderWorkflowSteps();
+  document.getElementById('btn-runworkflow').disabled = wfState.files.length === 0 || wfState.steps.length === 0;
+}
+
+function removeWorkflowStep(id) {
+  wfState.steps = wfState.steps.filter(s => s.id !== id);
+  renderWorkflowSteps();
+  document.getElementById('btn-runworkflow').disabled = wfState.files.length === 0 || wfState.steps.length === 0;
+}
+
+function renderWorkflowSteps() {
+  const container = document.getElementById('workflowSteps');
+  if (!container) return;
+  if (wfState.steps.length === 0) {
+    container.innerHTML = '<div id="workflowEmptyHint" style="text-align:center;padding:30px;color:var(--text-light);font-size:0.85rem">从上方点击操作按钮添加步骤<br><span style="font-size:0.75rem">步骤将按从上到下顺序执行</span></div>';
+    return;
+  }
+  container.innerHTML = '';
+  wfState.steps.forEach((step, idx) => {
+    const def = STEP_DEFS[step.type] || { label: step.type };
+    const card = document.createElement('div');
+    card.className = 'wf-step-card';
+    card.innerHTML = '<div class="wf-step-num">' + (idx+1) + '</div><div class="wf-step-name">' + def.label + '</div><span class="wf-step-running" id="wf-status-' + step.id + '"></span><button class="wf-step-del" onclick="removeWorkflowStep(' + step.id + ')">✕</button>';
+    container.appendChild(card);
+  });
+}
+
+function clearWorkflow() {
+  wfState = { files: [], steps: [], results: null };
+  renderWorkflowSteps();
+  const count = document.getElementById('wfFileCount');
+  if (count) count.textContent = '支持多个文件（用于合并等操作）';
+  document.getElementById('wfFileList').innerHTML = '';
+  document.getElementById('btn-runworkflow').disabled = true;
+}
+
+function handleWorkflowFiles(files) {
+  if (!files || files.length === 0) return;
+  wfState.files = Array.from(files);
+  const list = document.getElementById('wfFileList');
+  const count = document.getElementById('wfFileCount');
+  if (list) list.innerHTML = '';
+  wfState.files.forEach((f, i) => {
+    const chip = document.createElement('div');
+    chip.style.cssText = 'display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;font-size:0.72rem;color:var(--text-muted)';
+    chip.innerHTML = '<span>📄</span><span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.name + '</span><button onclick="this.parentElement.remove();wfState.files.splice(' + i + ',1)" style="border:none;background:none;cursor:pointer;color:var(--text-light);padding:0;font-size:0.7rem">✕</button>';
+    if (list) list.appendChild(chip);
+  });
+  if (count) count.textContent = '已上传 ' + wfState.files.length + ' 个文件';
+  document.getElementById('btn-runworkflow').disabled = wfState.steps.length === 0;
+}
+
+function saveWorkflow() {
+  if (wfState.steps.length === 0) { showToast('⚠️ 请先添加步骤'); return; }
+  const json = JSON.stringify(wfState.steps, null, 2);
+  downloadBlob(new Blob([json], { type: 'application/json' }), 'pdf_workflow_' + Date.now() + '.json');
+  showToast('✅ 工作流已保存');
+}
+
+function loadWorkflow() { document.getElementById('workflowFileInput').click(); }
+
+function loadWorkflowFromFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const steps = JSON.parse(e.target.result);
+      wfState.steps = steps.filter(s => STEP_DEFS[s.type]);
+      renderWorkflowSteps();
+      showToast('✅ 已加载 ' + wfState.steps.length + ' 个步骤');
+    } catch(e) { showToast('❌ 工作流文件格式错误'); }
+  };
+  reader.readAsText(file);
+}
+
+async function runWorkflow() {
+  if (wfState.files.length === 0) { showToast('⚠️ 请先上传文件'); return; }
+  if (wfState.steps.length === 0) { showToast('⚠️ 请先添加步骤'); return; }
+  showProgress('wfProgress', 'wfProgressBar', 'wfProgressText', 0);
+  let pdfBytes = await wfState.files[0].arrayBuffer().then(b => new Uint8Array(b));
+  const total = wfState.steps.length;
+  try {
+    for (let i = 0; i < total; i++) {
+      const step = wfState.steps[i];
+      const def = STEP_DEFS[step.type] || { label: step.type };
+      updateProgress('wfProgressBar', 'wfProgressText', '步骤 ' + (i+1) + '/' + total + ': ' + def.label + '…', (i/total)*100);
+      const statusEl = document.getElementById('wf-status-' + step.id);
+      if (statusEl) { statusEl.textContent = '⏳'; statusEl.className = 'wf-step-running'; }
+      pdfBytes = await executeWorkflowStep(step, pdfBytes);
+      if (statusEl) { statusEl.textContent = '✅'; statusEl.className = 'wf-step-done'; }
+    }
+    hideProgress('wfProgress');
+    downloadBytes(pdfBytes, 'workflow_result_' + Date.now() + '.pdf');
+    showToast('✅ 工作流执行完成！共 ' + total + ' 个步骤');
+  } catch(e) { hideProgress('wfProgress'); showToast('❌ 工作流出错: ' + e.message); }
+}
+
+async function executeWorkflowStep(step, pdfBytes) {
+  const doc = await PDFLib.PDFDocument.load(pdfBytes);
+  const pages = doc.getPages();
+  switch (step.type) {
+    case 'compress': return await doc.save({ useObjectStreams: false });
+    case 'rotate': {
+      pages.forEach(p => { const a = p.getRotation().angle; p.setRotation(PDFLib.degrees((a + 90) % 360)); });
+      return await doc.save();
+    }
+    case 'pagenum': {
+      const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+      pages.forEach((p, i) => { const { width } = p.getSize(); p.drawText(String(i+1), { x: width/2-10, y: 20, size: 12, font, color: PDFLib.rgb(0.3,0.3,0.3) }); });
+      return await doc.save();
+    }
+    case 'watermark': {
+      const { degrees, rgb } = PDFLib;
+      const font = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      pages.forEach(p => { const { width, height } = p.getSize(); p.drawText(step.params.watermarkText || '墨韵工具', { x: width/4, y: height/2, size: 48, font, color: rgb(0.8,0.8,0.8), opacity: 0.25, rotate: degrees(-45) }); });
+      return await doc.save();
+    }
+    case 'crop': {
+      pages.forEach(p => { const { width, height } = p.getSize(); p.setMediaBox(20, 20, width-40, height-40); });
+      return await doc.save();
+    }
+    case 'split': {
+      const newDoc = await PDFLib.PDFDocument.create();
+      const [firstPage] = await newDoc.copyPages(doc, [0]);
+      newDoc.addPage(firstPage);
+      return await newDoc.save();
+    }
+    default: return pdfBytes;
+  }
+}
 </script>
 </body>
 </html>
