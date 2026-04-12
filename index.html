@@ -12,7 +12,7 @@
   <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=ZCOOL+XiaoWei&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs"></script>
 
   <!-- pdf-lib & JSZip -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -2820,23 +2820,29 @@ function renderMergeFileList() {
 async function doMerge() {
   if (state.mergeFiles.length < 2) return;
   showProgress('generalProgress', 'generalProgressBar', 'generalProgressText', 0);
-  const mergedPdf = await PDFLib.PDFDocument.create();
-  const total = state.mergeFiles.length;
+  try {
+    const mergedPdf = await PDFLib.PDFDocument.create();
+    const total = state.mergeFiles.length;
 
-  for (let i = 0; i < total; i++) {
-    updateProgress('generalProgressBar', 'generalProgressText',
-      ((i / total) * 100).toFixed(0) + '%', (i / total) * 100);
-    const srcDoc = await PDFLib.PDFDocument.load(state.mergeFiles[i].bytes);
-    const pages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
-    pages.forEach(p => mergedPdf.addPage(p));
-    // Allow UI to update
-    await new Promise(r => setTimeout(r, 10));
+    for (let i = 0; i < total; i++) {
+      updateProgress('generalProgressBar', 'generalProgressText',
+        ((i / total) * 100).toFixed(0) + '%', (i / total) * 100);
+      const srcDoc = await PDFLib.PDFDocument.load(state.mergeFiles[i].bytes);
+      const pages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
+      pages.forEach(p => mergedPdf.addPage(p));
+      // Allow UI to update
+      await new Promise(r => setTimeout(r, 10));
+    }
+
+    const pdfBytes = await mergedPdf.save();
+    hideProgress('generalProgress');
+    downloadBytes(pdfBytes, `merged_${Date.now()}.pdf`);
+    showToast(`✅ 合并完成！共 ${mergedPdf.getPageCount()} 页`);
+  } catch (err) {
+    hideProgress('generalProgress');
+    console.error('Merge failed:', err);
+    showToast('合并失败：' + (err.message || '未知错误'), 'error');
   }
-
-  const pdfBytes = await mergedPdf.save();
-  hideProgress('generalProgress');
-  downloadBytes(pdfBytes, `merged_${Date.now()}.pdf`);
-  showToast(`✅ 合并完成！共 ${mergedPdf.getPageCount()} 页`);
 }
 
 // ============================================================
@@ -3298,7 +3304,10 @@ function showToast(message) {
   toast.className = 'toast';
   toast.textContent = message;
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3500);
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
 // ============================================================
@@ -3543,7 +3552,7 @@ function renderImg2PdfPreview() {
     const div = document.createElement('div');
     div.className = 'img-preview-item';
     div.innerHTML = `
-      <img src="${item.url}" alt="${item.name}" />
+      <img src="${item.url}" alt="${escHTML(item.name)}" />
       <span class="img-order">${idx + 1}</span>
       <button class="remove-img" data-idx="${idx}">✕</button>
     `;
@@ -3807,9 +3816,10 @@ async function doWatermark() {
     hideProgress('wmProgress');
     downloadBytes(pdfBytes, `watermarked_${Date.now()}.pdf`);
     showToast(`✅ 水印添加完成！`);
-  } catch (e) {
+  } catch (err) {
     hideProgress('wmProgress');
-    showToast(`❌ 出错: ${e.message}`);
+    console.error('Watermark failed:', err);
+    showToast('水印添加失败：' + (err.message || '未知错误'), 'error');
   }
 }
 
