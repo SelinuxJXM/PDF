@@ -3514,9 +3514,12 @@ window.showTool = function(toolName) {
   if (toolName === 'sign' && state.pdfDoc) initSigCanvas();
   if (toolName === 'crop' && state.pdfDoc) updateCropDims();
   if (toolName === 'watermark') {
-    hookWmInputs();
-    wmPreviewPdf = null;
-    updateWmPreview();
+    (async () => {
+      hookWmInputs();
+      wmPreviewPdf = null;
+      await ensurePdfJs();
+      updateWmPreview();
+    })();
   }
 }
 
@@ -3620,7 +3623,6 @@ function resetAll() {
   if (document.getElementById('cmpOldName')) document.getElementById('cmpOldName').textContent = '未选择';
   if (document.getElementById('cmpNewName')) document.getElementById('cmpNewName').textContent = '未选择';
   if (document.getElementById('cmpSummaryPanel')) document.getElementById('cmpSummaryPanel').style.display = 'none';
-  wfState = { files: [], steps: [], results: null };
   clearWorkflow();
   document.getElementById('hlToolbar').style.display = 'none';
   document.getElementById('hlPageGrid').innerHTML = '';
@@ -3960,8 +3962,12 @@ function setWmMode(mode) {
 
 function setWmPos(pos) {
   wmPos = pos;
-
+  document.querySelectorAll('.wm-pos-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.pos === pos);
+  });
 }
+
+
 // ============================================================
 // WATERMARK PREVIEW
 // ============================================================
@@ -4115,16 +4121,10 @@ function handleWmImage(input) {
   preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain" />`;
   const reader = new FileReader();
   reader.onload = async e => {
-    const bytes = new Uint8Array(e.target.result);
-    if (file.type === 'image/png') {
-      wmImageBytes = await PDFLib.PDFDocument.load(bytes).then(() => null); // just validate
-      wmImageBytes = bytes;
-    } else {
-      wmImageBytes = bytes;
-    }
+    wmImageBytes = new Uint8Array(e.target.result);
+    updateWmPreview();
   };
   reader.readAsArrayBuffer(file);
-  updateWmPreview();
 }
 
 async function doWatermark() {
