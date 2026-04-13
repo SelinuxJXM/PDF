@@ -1844,6 +1844,25 @@
         </div>
       </div>
 
+
+      <!-- 水印实时预览 -->
+      <div id="wmPreviewWrap" style="display:none;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:0.78rem;color:var(--text-muted)">实时预览</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn btn-sm" onclick="wmPreviewPrev()" title="上一页">←</button>
+            <span id="wmPreviewPageInfo" style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-mono)">1/1</span>
+            <button class="btn btn-sm" onclick="wmPreviewNext()" title="下一页">→</button>
+          </div>
+        </div>
+        <div style="position:relative;border:1px solid var(--border2);border-radius:10px;overflow:hidden;background:#fff;max-height:320px;display:flex;align-items:center;justify-content:center">
+          <canvas id="wmPreviewCanvas" style="max-width:100%;max-height:320px;display:block"></canvas>
+          <div id="wmPreviewLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg-card)">
+            <span style="color:var(--text-muted);font-size:0.8rem">加载中…</span>
+          </div>
+        </div>
+      </div>
+
       <div class="progress-wrap" id="wmProgress" style="display:none">
         <div class="progress-bar-bg"><div class="progress-bar" id="wmProgressBar"></div></div>
         <div class="progress-text" id="wmProgressText">正在添加水印…</div>
@@ -2957,10 +2976,11 @@ function createPageCard(pageIndex, pageCount, tool) {
 // ============================================================
 async function loadPdfIntoViews(file) {
   const { bytes, name } = await loadPdfFile(file);
-  state.pdfBytes = bytes;
+  wmPreviewPdf = null;  // reset watermark preview cache
+  state.pdfBytes = new Uint8Array(bytes);  // independent copy — prevents detached ArrayBuffer
   state.fileName = name;
 
-  const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+  const pdfDoc = await PDFLib.PDFDocument.load(state.pdfBytes.slice());
   state.pdfDoc = pdfDoc;
   state.pageCount = pdfDoc.getPageCount();
   state.pageRotations = {};
@@ -2975,7 +2995,7 @@ async function loadPdfIntoViews(file) {
   // Render thumbnails for each tool view
  try {
  await ensurePdfJs();
-  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
 
   const tools = ['split', 'rotate', 'delete', 'reorder', 'pdf2img'];
   for (const tool of tools) {
@@ -3125,7 +3145,7 @@ async function doSplit() {
     }
 
     const zip = new JSZip();
-    const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes);
+    const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes.slice());
     const baseName = state.fileName.replace(/\.pdf$/i, '') || 'document';
     let done = 0;
 
@@ -3201,7 +3221,7 @@ async function doRotate(degrees) {
     return;
   }
 
-  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes);
+  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes.slice());
   const newPdf = await PDFLib.PDFDocument.create();
   const total = state.pageCount;
   let updated = 0;
@@ -3293,7 +3313,7 @@ async function doDelete() {
 
   showProgress('deleteProgress', 'deleteProgressBar', 'deleteProgressText', 0);
 
-  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes);
+  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes.slice());
   const newPdf = await PDFLib.PDFDocument.create();
   const total = state.pageCount;
   let idx = 0;
@@ -3326,7 +3346,7 @@ function updateReorderSelBar() {
 async function doReorder() {
   showProgress('generalProgress', 'generalProgressBar', 'generalProgressText', 0);
 
-  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes);
+  const srcDoc = await PDFLib.PDFDocument.load(state.pdfBytes.slice());
   const newPdf = await PDFLib.PDFDocument.create();
   const total = state.orderedPages.length;
   for (let i = 0; i < total; i++) {
@@ -3493,7 +3513,12 @@ window.showTool = function(toolName) {
   if (toolName === 'highlight' && state.pdfDoc) renderHighlightGrid();
   if (toolName === 'sign' && state.pdfDoc) initSigCanvas();
   if (toolName === 'crop' && state.pdfDoc) updateCropDims();
-};
+  if (toolName === 'watermark') {
+    hookWmInputs();
+    wmPreviewPdf = null;
+    updateWmPreview();
+  }
+}
 
 // ============================================================
 // PROGRESS HELPERS
@@ -3935,10 +3960,152 @@ function setWmMode(mode) {
 
 function setWmPos(pos) {
   wmPos = pos;
+
+}
+// ============================================================
+// WATERMARK PREVIEW
+// ============================================================
+let wmPreviewPdf = null;
+let wmPreviewPage = 0;
+let wmPreviewDebounce = null;
+
+function updateWmPreview() {
+  if (wmPreviewDebounce) clearTimeout(wmPreviewDebounce);
+  wmPreviewDebounce = setTimeout(_renderWmPreview, 200);
+}
+
+async function _renderWmPreview() {
+  const wrap = document.getElementById('wmPreviewWrap');
+  if (!wrap || !state.pdfBytes) { if (wrap) wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  const canvas = document.getElementById('wmPreviewCanvas');
+  const loading = document.getElementById('wmPreviewLoading');
+  if (!canvas) return;
+  loading.style.display = 'flex';
+
+  try {
+    await ensurePdfJs();
+    if (!wmPreviewPdf) {
+      wmPreviewPdf = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
+    }
+    const total = wmPreviewPdf.numPages;
+    wmPreviewPage = Math.min(wmPreviewPage, total - 1);
+
+    const page = await wmPreviewPdf.getPage(wmPreviewPage + 1);
+    const scale = 0.7;
+    const viewport = page.getViewport({ scale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+
+    // Draw white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Render PDF page
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    // Overlay watermark preview
+    const mode = wmMode;
+    const opacity = mode === 'text'
+      ? (parseFloat(document.getElementById('wmOpacity').value) || 20) / 100
+      : (parseFloat(document.getElementById('wmImgOpacity').value) || 30) / 100;
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+
+    if (mode === 'text') {
+      const text = document.getElementById('wmText').value.trim() || 'CONFIDENTIAL';
+      const fontSize = parseFloat(document.getElementById('wmFontSize').value) || 48;
+      const angleDeg = parseFloat(document.getElementById('wmAngle').value) || -45;
+      ctx.font = `bold ${fontSize * scale}px sans-serif`;
+      ctx.fillStyle = 'rgba(128, 128, 128, 1)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      if (wmPos === 'diagonal') {
+        const cx = canvas.width / 2, cy = canvas.height / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(angleDeg * Math.PI / 180);
+        ctx.fillText(text, 0, 0);
+      } else if (wmPos === 'center') {
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+      } else if (wmPos === 'corner') {
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(text, canvas.width - 10, canvas.height - 10);
+      }
+    } else if (mode === 'image' && wmImageBytes) {
+      // Draw image watermark
+      const img = new Image();
+      img.src = URL.createObjectURL(new Blob([wmImageBytes]));
+      await new Promise(resolve => { img.onload = resolve; });
+      const maxW = canvas.width * 0.5;
+      const maxH = canvas.height * 0.5;
+      const ratio = Math.min(maxW / img.width, maxH / img.height);
+      const iw = img.width * ratio, ih = img.height * ratio;
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+
+      if (wmPos === 'diagonal') {
+        ctx.translate(cx, cy);
+        ctx.rotate(-45 * Math.PI / 180);
+        ctx.drawImage(img, -iw/2, -ih/2, iw, ih);
+      } else if (wmPos === 'center') {
+        ctx.drawImage(img, cx - iw/2, cy - ih/2, iw, ih);
+      } else if (wmPos === 'corner') {
+        ctx.drawImage(img, canvas.width - iw - 10, canvas.height - ih - 10, iw, ih);
+      }
+      URL.revokeObjectURL(img.src);
+    }
+
+    ctx.restore();
+
+    loading.style.display = 'none';
+    document.getElementById('wmPreviewPageInfo').textContent = `${wmPreviewPage + 1}/${total}`;
+  } catch(e) {
+    loading.style.display = 'none';
+    console.error('Watermark preview error:', e);
+  }
+}
+
+function wmPreviewPrev() {
+  if (wmPreviewPdf && wmPreviewPage > 0) {
+    wmPreviewPage--;
+    updateWmPreview();
+  }
+}
+
+function wmPreviewNext() {
+  if (wmPreviewPdf && wmPreviewPage < wmPreviewPdf.numPages - 1) {
+    wmPreviewPage++;
+    updateWmPreview();
+  }
+}
+
+// Hook into existing setWmMode and setWmPos
+const _origSetWmMode = setWmMode;
+window.setWmMode = function(mode) { _origSetWmMode(mode); updateWmPreview(); };
+
+const _origSetWmPos = window.setWmPos;
+window.setWmPos = function(pos) { _origSetWmPos(pos); updateWmPreview(); };
+
+// Hook input events
+function hookWmInputs() {
+  ['wmText','wmFontSize','wmAngle','wmOpacity','wmImgOpacity'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.wmHooked) {
+      el.dataset.wmHooked = '1';
+      el.addEventListener('input', updateWmPreview);
+      el.addEventListener('change', updateWmPreview);
+    }
+  });
+}
+
   document.querySelectorAll('.wm-pos-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.pos === pos);
   });
-}
 
 function handleWmImage(input) {
   const file = input.files[0];
@@ -3957,6 +4124,7 @@ function handleWmImage(input) {
     }
   };
   reader.readAsArrayBuffer(file);
+  updateWmPreview();
 }
 
 async function doWatermark() {
