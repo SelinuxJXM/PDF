@@ -937,13 +937,15 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-xs);
-      padding: 2px 8px;
-      font-size: 0.7rem;
+      padding: 4px 12px;
+      font-size: 0.75rem;
       color: var(--text-muted);
       cursor: grab;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      z-index: 2
+      opacity: 0.7;
+      transition: opacity 0.15s ease, background 0.15s ease;
+      z-index: 2;
+      user-select: none;
+      touch-action: none
     }
 
     .doc-page-wrap:hover .drag-handle {
@@ -951,7 +953,18 @@
     }
 
     .drag-handle:active {
-      cursor: grabbing
+      cursor: grabbing;
+      background: var(--accent);
+      color: white
+    }
+
+    .drag-placeholder {
+      border: 2px dashed var(--accent);
+      border-radius: var(--radius);
+      background: rgba(200,64,58,0.06);
+      min-height: 60px;
+      transition: height 0.15s ease;
+      flex-shrink: 0
     }
 
     /* Mobile */
@@ -3503,7 +3516,7 @@ function createPageCard(pageIndex, pageCount, tool) {
   const card = document.createElement('div');
   card.className = 'page-card';
   card.dataset.page = pageIndex;
-  card.draggable = (tool === 'reorder');
+  card.draggable = false;
 
   const rotationDeg = state.pageRotations[pageIndex] || 0;
   if (rotationDeg) card.dataset.rotation = rotationDeg;
@@ -3606,9 +3619,8 @@ async function loadPdfIntoViews(file) {
       if (tool === 'reorder') {
         const handle = document.createElement('div');
         handle.className = 'drag-handle';
-        handle.textContent = '☰ 拖拽排序';
+        handle.textContent = '☰ 按住拖拽';
         wrap.appendChild(handle);
-        wrap.draggable = true;
       }
 
       // Canvas
@@ -3666,7 +3678,8 @@ async function loadPdfIntoViews(file) {
 
   // Init merge view
   initMergeView();
-  showTool('merge');
+  // Show a tool that has doc viewer so user sees pages immediately
+  showTool('rotate');
 }
 
 // ============================================================
@@ -4003,69 +4016,124 @@ function setupReorderDrag() {
   const v = docViewers['reorder'];
   if (!v) return;
   const scroll = v.scrollEl;
-  let draggedCard = null;
 
-  scroll.addEventListener('dragstart', (e) => {
-    draggedCard = e.target.closest('.doc-page-wrap');
-    if (!draggedCard) return;
-    draggedCard.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-  });
+  let dragging = null;       // the .doc-page-wrap being dragged
+  let placeholder = null;    // insertion indicator
+  let startX = 0, startY = 0;
+  let offsetX = 0, offsetY = 0;
+  let hasMoved = false;
+  const MOVE_THRESHOLD = 5;
 
-  scroll.addEventListener('dragend', () => {
-    if (draggedCard) draggedCard.classList.remove('dragging');
-    scroll.querySelectorAll('.doc-page-wrap').forEach(c => c.classList.remove('drag-over-card'));
-    draggedCard = null;
-  });
+  scroll.addEventListener('pointerdown', (e) => {
+    const handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    const wrap = handle.closest('.doc-page-wrap');
+    if (!wrap) return;
 
-  scroll.addEventListener('dragover', (e) => {
     e.preventDefault();
-    const card = e.target.closest('.doc-page-wrap');
-    if (!card || card === draggedCard) return;
-    scroll.querySelectorAll('.doc-page-wrap').forEach(c => c.classList.remove('drag-over-card'));
-    card.style.outline = '2px dashed var(--accent2)';
-    card.style.outlineOffset = '4px';
+    handle.setPointerCapture(e.pointerId);
+
+    dragging = wrap;
+    hasMoved = false;
+    const rect = wrap.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
+
+    // Create placeholder
+    placeholder = document.createElement('div');
+    placeholder.className = 'drag-placeholder';
+    placeholder.style.width = rect.width + 'px';
+    placeholder.style.height = rect.height + 'px';
+
+    // Style the dragged item
+    wrap.style.position = 'fixed';
+    wrap.style.zIndex = '9999';
+    wrap.style.width = rect.width + 'px';
+    wrap.style.left = rect.left + 'px';
+    wrap.style.top = rect.top + 'px';
+    wrap.style.pointerEvents = 'none';
+    wrap.style.boxShadow = '0 12px 40px rgba(0,0,0,0.25)';
+    wrap.style.transform = 'scale(1.03)';
+    wrap.style.transition = 'transform 0.12s ease, box-shadow 0.12s ease';
+    wrap.classList.add('dragging');
+
+    // Insert placeholder where the item was
+    wrap.parentNode.insertBefore(placeholder, wrap);
   });
 
-  scroll.addEventListener('dragleave', (e) => {
-    const card = e.target.closest('.doc-page-wrap');
-    if (card) { card.style.outline = ''; card.style.outlineOffset = ''; }
+  scroll.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!hasMoved && Math.abs(dx) < MOVE_THRESHOLD && Math.abs(dy) < MOVE_THRESHOLD) return;
+    hasMoved = true;
+
+    // Move dragged item to follow pointer
+    dragging.style.left = (e.clientX - offsetX) + 'px';
+    dragging.style.top = (e.clientY - offsetY) + 'px';
+
+    // Find the element under the pointer (hide dragged to detect below)
+    dragging.style.display = 'none';
+    const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+    dragging.style.display = '';
+
+    if (!elemBelow) return;
+    const target = elemBelow.closest('.doc-page-wrap');
+    if (target && target !== dragging) {
+      // Determine if above or below midpoint
+      const targetRect = target.getBoundingClientRect();
+      const midY = targetRect.top + targetRect.height / 2;
+      if (e.clientY < midY) {
+        target.parentNode.insertBefore(placeholder, target);
+      } else {
+        target.parentNode.insertBefore(placeholder, target.nextSibling);
+      }
+    }
   });
 
-  scroll.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const target = e.target.closest('.doc-page-wrap');
-    if (!target || !draggedCard || target === draggedCard) return;
+  const endDrag = () => {
+    if (!dragging) return;
+    const wrap = dragging;
 
-    const wraps = [...scroll.querySelectorAll('.doc-page-wrap')];
-    const fromIdx = wraps.indexOf(draggedCard);
-    const toIdx = wraps.indexOf(target);
-
-    // Update orderedPages
-    const [moved] = state.orderedPages.splice(fromIdx, 1);
-    state.orderedPages.splice(toIdx, 0, moved);
-
-    // Reorder DOM
-    if (fromIdx < toIdx) {
-      target.after(draggedCard);
-    } else {
-      target.before(draggedCard);
+    // Insert wrap at placeholder position
+    if (placeholder && placeholder.parentNode) {
+      placeholder.parentNode.insertBefore(wrap, placeholder);
+      placeholder.remove();
     }
 
+    // Reset styles
+    wrap.style.position = '';
+    wrap.style.zIndex = '';
+    wrap.style.width = '';
+    wrap.style.left = '';
+    wrap.style.top = '';
+    wrap.style.pointerEvents = '';
+    wrap.style.boxShadow = '';
+    wrap.style.transform = '';
+    wrap.style.transition = '';
+    wrap.classList.remove('dragging');
+
+    // Update orderedPages from current DOM order
+    const wraps = [...scroll.querySelectorAll('.doc-page-wrap')];
+    state.orderedPages = wraps.map(w => parseInt(w.dataset.page));
+
     // Update page labels
-    scroll.querySelectorAll('.doc-page-wrap').forEach((wrap, i) => {
+    wraps.forEach((w, i) => {
       const origIdx = state.orderedPages[i];
-      wrap.dataset.page = origIdx;
-      const label = wrap.querySelector('.doc-page-label');
+      w.dataset.page = origIdx;
+      const label = w.querySelector('.doc-page-label');
       if (label) label.textContent = 'P.' + (origIdx + 1) + ' / ' + state.pageCount;
     });
 
-    scroll.querySelectorAll('.doc-page-wrap').forEach(c => {
-      c.style.outline = '';
-      c.style.outlineOffset = '';
-    });
+    dragging = null;
+    placeholder = null;
     updateReorderSelBar();
-  });
+  };
+
+  scroll.addEventListener('pointerup', endDrag);
+  scroll.addEventListener('pointercancel', endDrag);
 }
 
 // ============================================================
