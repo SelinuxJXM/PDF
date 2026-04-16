@@ -153,7 +153,7 @@
     }
 
     .header-inner {
-      max-width: 1400px;
+      max-width: none;
       margin: 0 auto;
       padding: 0 24px;
       height: 64px;
@@ -441,7 +441,7 @@
 
     /* ===== MAIN ===== */
     .app-main {
-      max-width: 1200px;
+      max-width: none;
       margin: 0 auto;
       padding: 24px 20px 80px
     }
@@ -449,8 +449,8 @@
     /* ===== HERO / DROP ZONE - iOS Style ===== */
     .drop-hero {
       text-align: center;
-      margin-bottom: 20px;
-      padding-top: 24px
+      margin-bottom: 0;
+      padding-top: 0
     }
 
     .drop-hero h1 {
@@ -794,8 +794,7 @@
 
     .doc-scroll {
       overflow: auto;
-      flex: 1 1 0;
-      min-height: 200px;
+      min-height: 300px;
       padding: 16px;
       display: flex;
       flex-direction: column;
@@ -1465,58 +1464,47 @@
     }
 
     /* ===== TOOL CONTENT AREAS ===== */
+    /* ===== TOOL VIEWS: LEFT=DOC, RIGHT=CONTROLS ===== */
     .tool-view {
       display: none;
-      flex-direction: row;
-      align-items: flex-start;
-      gap: 20px;
-      padding: 20px 24px;
-      max-width: 1400px;
-      margin: 0 auto;
-      min-height: calc(100vh - 80px);
-      align-items: stretch;
-      box-sizing: border-box;
+      /* Grid: left fills space, right is fixed 320px */
+      grid-template-columns: 1fr 320px;
+      gap: 0;
+      padding: 0;
+      align-items: start;
     }
-    .tool-view.active { display: flex; }
+    .tool-view.active { display: grid; }
 
     .tool-view-left {
-      flex: 1 1 0;
+      padding: 20px 20px 20px 0;
       min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      min-height: 0;
     }
 
     .tool-view-right {
-      flex: 0 0 300px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      width: 320px;
+      min-width: 320px;
+      max-width: 320px;
+      border-left: 1px solid var(--border);
+      padding: 20px 0 20px 20px;
       position: sticky;
       top: 64px;
-      max-height: calc(100vh - 100px);
+      max-height: calc(100vh - 80px);
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--bg);
     }
     .tool-view-right::-webkit-scrollbar { width: 4px; }
     .tool-view-right::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
     .tool-view-right::-webkit-scrollbar-track { background: transparent; }
+    .tool-view-right .action-buttons { flex-direction: column; gap: 8px; }
+    .tool-view-right .action-buttons .btn { width: 100%; justify-content: center; }
+    .tool-view-right .progress-wrap { margin: 0; }
 
-    .tool-view-right .action-buttons {
-      flex-direction: column;
-      gap: 8px;
-    }
-    .tool-view-right .action-buttons .btn {
-      width: 100%;
-      justify-content: center;
-    }
-    .tool-view-right .progress-wrap {
-      margin: 0;
-    }
-
-    /* ===== EMPTY STATE ===== */
+    /* ===== EMPTY STATE ===== */    /* ===== EMPTY STATE ===== */
     .empty-state {
       text-align: center;
       padding: 48px 24px;
