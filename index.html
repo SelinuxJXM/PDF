@@ -3887,7 +3887,6 @@ function createPageCard(pageIndex, pageCount, tool) {
 // ============================================================
 async function loadPdfIntoViews(file) {
   const { bytes, name } = await loadPdfFile(file);
-  wmPreviewPdf = null;  // reset watermark preview cache
   state.pdfBytes = new Uint8Array(bytes);  // independent copy — prevents detached ArrayBuffer
   state.fileName = name;
 
@@ -4059,6 +4058,15 @@ async function loadPdfIntoViews(file) {
 
   // Init merge view
   initMergeView();
+  // Init watermark editor
+  if (!wmEditor) {
+    wmEditor = new FullPageEditor('wmEditor', {
+      onPageRendered: (pageIndex, canvas, viewport) => {
+        _drawWmOnCanvas(canvas, viewport);
+      }
+    });
+  }
+  wmEditor.loadPdf(state.pdfBytes);
   // Show a tool that has doc viewer so user sees pages immediately
   showTool('rotate');
 }
@@ -4839,7 +4847,6 @@ window.showTool = function(toolName) {
   if (toolName === 'watermark') {
     (async () => {
       hookWmInputs();
-      wmPreviewPdf = null;
       await ensurePdfJs();
       updateWmPreview();
     })();
@@ -4975,6 +4982,7 @@ function resetAll() {
   document.getElementById('wmImgPreview').innerHTML = '暂无';
   setWmMode('text');
   setWmPos('center');
+  if (wmEditor) wmEditor.reset();
 }
 
 // ============================================================
@@ -5300,8 +5308,6 @@ function setWmPos(pos) {
 // WATERMARK PREVIEW
 // ============================================================
 let wmEditor = null;
-let wmPreviewPdf = null;
-let wmPreviewPage = 0;
 let wmPreviewDebounce = null;
 
 function _drawWmOnCanvas(canvas, viewport) {
@@ -5355,122 +5361,14 @@ function _drawWmOnCanvas(canvas, viewport) {
   }
   ctx.restore();
 }
+
+function updateWmPreview() {
   if (wmPreviewDebounce) clearTimeout(wmPreviewDebounce);
   wmPreviewDebounce = setTimeout(() => {
     if (wmEditor && wmEditor.pdf) {
       wmEditor.renderAllPages();
     }
   }, 200);
-}
-
-async function _renderWmPreview() {
-  const wrap = document.getElementById('wmPreviewWrap');
-  if (!wrap || !state.pdfBytes) { if (wrap) wrap.style.display = 'none'; return; }
-  wrap.style.display = 'block';
-
-  const canvas = document.getElementById('wmPreviewCanvas');
-  const loading = document.getElementById('wmPreviewLoading');
-  if (!canvas) return;
-  loading.style.display = 'flex';
-
-  try {
-    await ensurePdfJs();
-    if (!wmPreviewPdf) {
-      wmPreviewPdf = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
-    }
-    const total = wmPreviewPdf.numPages;
-    wmPreviewPage = Math.min(wmPreviewPage, total - 1);
-
-    const page = await wmPreviewPdf.getPage(wmPreviewPage + 1);
-    const scale = 0.7;
-    const viewport = page.getViewport({ scale });
-
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext('2d');
-
-    // Draw white background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Render PDF page
-    await page.render({ canvasContext: ctx, viewport }).promise;
-
-    // Overlay watermark preview
-    const mode = wmMode;
-    const opacity = mode === 'text'
-      ? (parseFloat(document.getElementById('wmOpacity').value) || 20) / 100
-      : (parseFloat(document.getElementById('wmImgOpacity').value) || 30) / 100;
-
-    ctx.save();
-    ctx.globalAlpha = opacity;
-
-    if (mode === 'text') {
-      const text = document.getElementById('wmText').value.trim() || 'CONFIDENTIAL';
-      const fontSize = parseFloat(document.getElementById('wmFontSize').value) || 48;
-      const angleDeg = parseFloat(document.getElementById('wmAngle').value) || -45;
-      ctx.font = `bold ${fontSize * scale}px sans-serif`;
-      ctx.fillStyle = 'rgba(128, 128, 128, 1)';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
-      if (wmPos === 'diagonal') {
-        const cx = canvas.width / 2, cy = canvas.height / 2;
-        ctx.translate(cx, cy);
-        ctx.rotate(angleDeg * Math.PI / 180);
-        ctx.fillText(text, 0, 0);
-      } else if (wmPos === 'center') {
-        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-      } else if (wmPos === 'corner') {
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(text, canvas.width - 10, canvas.height - 10);
-      }
-    } else if (mode === 'image' && wmImageBytes) {
-      // Draw image watermark
-      const img = new Image();
-      img.src = URL.createObjectURL(new Blob([wmImageBytes]));
-      await new Promise(resolve => { img.onload = resolve; });
-      const maxW = canvas.width * 0.5;
-      const maxH = canvas.height * 0.5;
-      const ratio = Math.min(maxW / img.width, maxH / img.height);
-      const iw = img.width * ratio, ih = img.height * ratio;
-      const cx = canvas.width / 2, cy = canvas.height / 2;
-
-      if (wmPos === 'diagonal') {
-        ctx.translate(cx, cy);
-        ctx.rotate(-45 * Math.PI / 180);
-        ctx.drawImage(img, -iw/2, -ih/2, iw, ih);
-      } else if (wmPos === 'center') {
-        ctx.drawImage(img, cx - iw/2, cy - ih/2, iw, ih);
-      } else if (wmPos === 'corner') {
-        ctx.drawImage(img, canvas.width - iw - 10, canvas.height - ih - 10, iw, ih);
-      }
-      URL.revokeObjectURL(img.src);
-    }
-
-    ctx.restore();
-
-    loading.style.display = 'none';
-    document.getElementById('wmPreviewPageInfo').textContent = `${wmPreviewPage + 1}/${total}`;
-  } catch(e) {
-    loading.style.display = 'none';
-    console.error('Watermark preview error:', e);
-  }
-}
-
-function wmPreviewPrev() {
-  if (wmPreviewPdf && wmPreviewPage > 0) {
-    wmPreviewPage--;
-    updateWmPreview();
-  }
-}
-
-function wmPreviewNext() {
-  if (wmPreviewPdf && wmPreviewPage < wmPreviewPdf.numPages - 1) {
-    wmPreviewPage++;
-    updateWmPreview();
-  }
 }
 
 // Hook into existing setWmMode and setWmPos
